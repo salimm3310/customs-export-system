@@ -266,7 +266,6 @@
             previewCard.classList.remove('hidden');
         }
 
-        // دالة السحب الصارم والتنبيـه الدقيق للخطوط الملاحية المعتمدة
         async function fetchDatesSilently(shipmentId, bookingNo, carrierName) {
             if (!bookingNo || bookingNo === 'N/A') return showToast("رقم الحجز غير صالح", "⚠️");
 
@@ -488,6 +487,8 @@
             }
         });
 
+        // ==================== أزرار التحديد الجماعي المسح والتحديث ====================
+
         function toggleSelectAll(master) {
             document.querySelectorAll('.row-checkbox').forEach(cb => cb.checked = master.checked);
             updateSelectedCount();
@@ -496,6 +497,74 @@
         function updateSelectedCount() {
             const count = document.querySelectorAll('.row-checkbox:checked').length;
             document.getElementById('selectedCount').innerText = `(${count})`;
+        }
+
+        // 1. التحديث الجماعي لنوع المهمة
+        async function applyBulkTaskUpdate() {
+            const selectedBoxes = document.querySelectorAll('.row-checkbox:checked');
+            const newTask = document.getElementById('bulkTaskSelect').value;
+
+            if (selectedBoxes.length === 0) {
+                return showToast("⚠️ يُرجى تحديد عملية واحدة على الأقل أولاً", "⚠️");
+            }
+            if (!newTask) {
+                return showToast("⚠️ يُرجى اختيار المهمة المراد تعيينها للمحددين", "⚠️");
+            }
+
+            const idsToUpdate = Array.from(selectedBoxes).map(cb => cb.value);
+
+            try {
+                const { error } = await supabaseClient
+                    .from('shipments')
+                    .update({ current_main_task: newTask })
+                    .in('id', idsToUpdate);
+
+                if (error) throw error;
+
+                showToast(`🚀 تم تحديث نوع المهمة لـ (${idsToUpdate.length}) عمليات بنجاح!`, "✅");
+                document.getElementById('bulkTaskSelect').value = "";
+                fetchShipmentsToModal();
+            } catch (err) {
+                showToast("فشل التحديث الجماعي: " + err.message, "❌");
+            }
+        }
+
+        // 2. المسح الجماعي للعمليات المحفوظة
+        async function applyBulkDelete() {
+            const selectedBoxes = document.querySelectorAll('.row-checkbox:checked');
+            if (selectedBoxes.length === 0) {
+                return showToast("⚠️ يُرجى تحديد عملية واحدة على الأقل للمسح", "⚠️");
+            }
+
+            const idsToDelete = Array.from(selectedBoxes).map(cb => cb.value);
+
+            if (!confirm(`هل أنت متأكد من مسح (${idsToDelete.length}) عمليات محددة نهائياً؟`)) return;
+
+            try {
+                const { error } = await supabaseClient
+                    .from('shipments')
+                    .delete()
+                    .in('id', idsToDelete);
+
+                if (error) throw error;
+
+                showToast(`🗑️ تم مسح (${idsToDelete.length}) عمليات بنجاح`, "✅");
+                fetchShipmentsToModal();
+            } catch (err) {
+                showToast("فشل المسح الجماعي: " + err.message, "❌");
+            }
+        }
+
+        function filterTable() {
+            const q = document.getElementById('searchInput').value.toLowerCase();
+            const filtered = allShipmentsData.filter(item => {
+                return (item.external_file_no || '').toLowerCase().includes(q) ||
+                       (item.internal_file_no || '').toLowerCase().includes(q) ||
+                       (item.client_name || '').toLowerCase().includes(q) ||
+                       (item.invoice_no || '').toLowerCase().includes(q) ||
+                       (item.bl_shipping_no || '').toLowerCase().includes(q);
+            });
+            renderModalTable(filtered);
         }
 
         async function updateSingleTask(id, newTask) {
