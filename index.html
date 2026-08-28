@@ -266,19 +266,21 @@
             previewCard.classList.remove('hidden');
         }
 
-        // دالة السحب الصارم والتنبيـه الدقيق
-        async function fetchDatesSilently(shipmentId, bookingNo) {
+        // دالة السحب الصارم والتنبيـه الدقيق للخطوط الملاحية المعتمدة
+        async function fetchDatesSilently(shipmentId, bookingNo, carrierName) {
             if (!bookingNo || bookingNo === 'N/A') return showToast("رقم الحجز غير صالح", "⚠️");
 
-            showToast(`⏳ جاري جلب تواريخ الحجز (${bookingNo}) عبر الإضافة...`, "🔄");
+            const carrier = carrierName || "Hapag-Lloyd";
+            showToast(`⏳ جاري جلب تواريخ ${carrier} لـ (${bookingNo})...`, "🔄");
 
             const EXTENSION_ID = "ckjkngbollcbhaacelldonopehlgpgaa"; 
 
             if (window.chrome && chrome.runtime && chrome.runtime.sendMessage) {
                 chrome.runtime.sendMessage(EXTENSION_ID, {
-                    action: "FETCH_HAPAG_SILENTLY",
+                    action: "FETCH_SILENTLY",
                     bookingNo: bookingNo,
-                    shipmentId: shipmentId
+                    shipmentId: shipmentId,
+                    carrier: carrier
                 }, (response) => {
                     if (chrome.runtime.lastError) {
                         showToast("⚠️ لم يتم العثور على الإضافة، اضغط 🔄 في chrome://extensions", "❌");
@@ -294,11 +296,10 @@
                             if (s.cutoff) foundList.push("Cut-off");
                             if (s.vgm) foundList.push("VGM");
 
-                            showToast(`🚀 تم تحديث: [ ${foundList.join(' , ')} ] بنجاح!`, "✅");
+                            showToast(`🚀 [${carrier}] تم تحديث: [ ${foundList.join(' , ')} ] بنجاح!`, "✅");
                             fetchShipmentsToModal();
                         } else {
-                            // التنبيه الأصفر الصريح عند عدم وجود تواريخ
-                            showToast(`⚠️ لم يتم العثور على تواريخ رسمية للحجز (${bookingNo})، تم ترك الخانات كما هي`, "⚠️");
+                            showToast(`⚠️ [${carrier}] لم يتم العثور على تواريخ رسمية للحجز (${bookingNo})، تم ترك الخانات كما هي`, "⚠️");
                         }
                     } else {
                         showToast("❌ تعذر الجلب: " + (response ? response.message : "خطأ غير معروف"), "❌");
@@ -401,7 +402,7 @@
                         </td>
                         <td class="p-3 text-center">
                             ${item.bl_shipping_no !== 'N/A' ? `
-                                <button onclick="fetchDatesSilently('${item.id}', '${item.bl_shipping_no}')" 
+                                <button onclick="fetchDatesSilently('${item.id}', '${item.bl_shipping_no}', '${carrier}')" 
                                     class="w-full bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold px-3 py-2 rounded-lg shadow-sm transition-all flex items-center justify-center gap-1">
                                     ⚡ 1. جلب المواعيد تلقائياً
                                 </button>
