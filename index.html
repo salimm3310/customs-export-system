@@ -21,7 +21,7 @@
         <header class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex justify-between items-center">
             <div>
                 <h1 class="text-2xl font-bold text-slate-900">منظومة صادر التخليص الجمركي المتقدمة 🚢</h1>
-                <p class="text-sm text-slate-500">التحديث الصامت والآلي المباشر للبيانات</p>
+                <p class="text-sm text-slate-500">التحديث الصامت والآلي المباشر للبيانات الدقيقة</p>
             </div>
             
             <div class="flex items-center gap-3">
@@ -191,7 +191,7 @@
             supabaseClient
                 .channel('public:shipments')
                 .on('postgres_changes', { event: '*', schema: 'public', table: 'shipments' }, payload => {
-                    showToast("⚡ تم التحديث التلقائي بنجاح!", "🔄");
+                    showToast("⚡ تم التحديث بنجاح!", "🔄");
                     fetchShipmentsToModal();
                 })
                 .subscribe();
@@ -266,11 +266,11 @@
             previewCard.classList.remove('hidden');
         }
 
-        // دالة السحب الصامت عبر الإضافة
+        // دالة السحب الصارم والدقيق
         async function fetchDatesSilently(shipmentId, bookingNo) {
             if (!bookingNo || bookingNo === 'N/A') return showToast("رقم الحجز غير صالح", "⚠️");
 
-            showToast(`⏳ جاري جلب تواريخ الحجز (${bookingNo}) عبر الإضافة...`, "🔄");
+            showToast(`⏳ جاري فحص تفاصيل الشحنة (${bookingNo}) بحرص...`, "🔄");
 
             const EXTENSION_ID = "ckjkngbollcbhaacelldonopehlgpgaa"; 
 
@@ -281,19 +281,29 @@
                     shipmentId: shipmentId
                 }, (response) => {
                     if (chrome.runtime.lastError) {
-                        showToast("⚠️ لم يتم العثور على الإضافة، يرجى التأكد من الضغط على 🔄 في chrome://extensions", "❌");
-                        console.error(chrome.runtime.lastError);
+                        showToast("⚠️ يتعذر التواصل مع الإضافة، اضغط 🔄 في chrome://extensions", "❌");
                         return;
                     }
                     if (response && response.success) {
-                        showToast(`🚀 تم تحديث مواعيد الشحنة (${bookingNo}) بنجاح!`, "✅");
+                        const s = response.summary || {};
+                        let foundList = [];
+                        if (s.etd) foundList.push("ETD");
+                        if (s.eta) foundList.push("ETA");
+                        if (s.cutoff) foundList.push("Cut-off");
+                        if (s.vgm) foundList.push("VGM");
+
+                        if (foundList.length > 0) {
+                            showToast(`🚀 تم جلب: [ ${foundList.join(' , ')} ] وترك الباقي فارغاً لعدم التضليل`, "✅");
+                        } else {
+                            showToast(`⚠️ لم يتم إظهار تواريخ رسمية للشحنة بالصفحة، تم ترك الحقول فارغة`, "⚠️");
+                        }
                         fetchShipmentsToModal();
                     } else {
-                        showToast("❌ تعذر الجلب: " + (response ? response.message : "خطأ غير معروف"), "❌");
+                        showToast("❌ تعذر الجلب من المصدر", "❌");
                     }
                 });
             } else {
-                showToast("⚠️ يرجى استخدام متصفح Google Chrome لضمان الربط بالإاضافة", "⚠️");
+                showToast("⚠️ يرجى استخدام متصفح Google Chrome", "⚠️");
             }
         }
 
