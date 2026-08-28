@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>منظومة صادر التخليص الجمركي - التحديث التلقائي المباشر</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+</head>
+<body class="bg-slate-100 font-sans p-6 text-slate-800">
+
+    <div id="toastNotification" class="fixed top-5 left-1/2 -translate-x-1/2 z-[100] hidden bg-slate-900/90 text-white text-xs font-bold px-5 py-3 rounded-xl shadow-2xl transition-all flex items-center gap-2 border border-slate-700 backdrop-blur-md">
+        <span id="toastIcon">✅</span>
+        <span id="toastMessage">تم التحديث بنجاح</span>
+    </div>
+
+    <div class="max-w-6xl mx-auto space-y-6">
+        
+        <header class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex justify-between items-center">
+            <div>
+                <h1 class="text-2xl font-bold text-slate-900">منظومة صادر التخليص الجمركي المتقدمة 🚢</h1>
+                <p class="text-sm text-slate-500">التحديث الصامت والآلي المباشر للبيانات</p>
+            </div>
+            
+            <div class="flex items-center gap-3">
+                <span id="connectionStatus" class="inline-flex items-center gap-2 bg-amber-50 text-amber-700 text-xs font-semibold px-3 py-1.5 rounded-full border border-amber-200">
+                    <span class="w-2 h-2 rounded-full bg-amber-500"></span>
+                    جاري الاتصال...
+                </span>
+
+                <button onclick="openTasksModal()" 
+                    class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm px-4 py-2 rounded-lg transition-colors shadow-md flex items-center gap-2">
+                    📋 عرض العمليات المسجلة
+                </button>
+            </div>
+        </header>
+
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 space-y-4">
+            <h2 class="text-lg font-bold text-slate-800 border-b pb-2">إدراج عملية صادر جديدة</h2>
+            
+            <form id="shipmentForm" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-semibold mb-1">عنوان الملف المعياري للصادر:</label>
+                    <input type="text" id="rawTitle" required
+                        placeholder="EX-2026 - 1002 - 1.0 x 40 RFH - DAMT - FOS - France - INV 26037 - EXPORT CO - 9021122930"
+                        class="w-full p-3 border border-slate-300 rounded-lg text-left text-sm font-mono focus:ring-2 focus:ring-blue-500 outline-none" dir="ltr"
+                        oninput="onTitleInputChanged()">
+                </div>
+
+                <div id="previewCard" class="hidden bg-slate-50 p-4 rounded-lg border border-slate-200 space-y-3">
+                    <div class="text-xs font-bold text-blue-900 border-b pb-1">🔍 التفكيك التلقائي والتعرف على الخط الملاحي:</div>
+                    
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+                        <div><span class="text-slate-400">رقم الخارجي:</span> <strong id="pvExt" class="font-mono text-blue-700">--</strong></div>
+                        <div><span class="text-slate-400">رقم الداخلي:</span> <strong id="pvInt" class="font-mono text-blue-700">--</strong></div>
+                        <div><span class="text-slate-400">الحاوية:</span> <strong id="pvContainer">--</strong></div>
+                        <div><span class="text-slate-400">رقم الحجز (Booking):</span> <strong id="pvBooking" class="font-mono text-emerald-700">--</strong></div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                        <div>
+                            <label class="block text-xs font-bold mb-1 text-slate-700">الخط الملاحي المحدد تلقائياً:</label>
+                            <select id="carrierSelect" class="w-full p-2 border border-slate-300 rounded text-xs bg-white font-bold text-blue-900 outline-none">
+                                <option value="Hapag-Lloyd">Hapag-Lloyd</option>
+                                <option value="Maersk">Maersk Line / Sealand</option>
+                                <option value="MSC">MSC (Mediterranean Shipping Co)</option>
+                                <option value="CMA CGM">CMA CGM</option>
+                                <option value="COSCO">COSCO Shipping</option>
+                                <option value="Arkas">Arkas Line</option>
+                                <option value="Tarros">Tarros Line</option>
+                                <option value="Other">خط ملاحي آخر</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold mb-1 text-slate-700">نوع المهمة المطلوبة للصادر:</label>
+                            <select id="mainTask" class="w-full p-2 border border-slate-300 rounded text-xs bg-white outline-none">
+                                <option value="inspection_by_us">🔍 إجراء الفحص والمعاينة عن طريقنا</option>
+                                <option value="documentation" selected>📄 البدء في إصدار مستندات الصادر</option>
+                                <option value="export_booking_transport">🚚 متابعة سحب الفارغ وشحن البضاعة</option>
+                                <option value="shipment_amendment">✏️ إجراء تعديلات على بيان الصادر</option>
+                                <option value="task_completion">✅ إتمام الجمرك والإفراج النهائي</option>
+                                <option value="file_archiving">📁 تقفيل وتصفية ملف الصادر</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <button type="submit" id="submitBtn"
+                        class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold p-3 rounded-lg transition-colors shadow-md">
+                        + حفظ عملية الصادر في النظام
+                    </button>
+                </div>
+            </form>
+        </div>
+
+    </div>
+
+    <div id="tasksModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-7xl max-h-[90vh] rounded-2xl shadow-2xl flex flex-col overflow-hidden">
+            
+            <div class="p-5 border-b border-slate-200 flex justify-between items-center bg-slate-50">
+                <div class="flex items-center gap-3">
+                    <h2 class="text-xl font-bold text-slate-800">سجل عمليات الصادر والتتبع المباشر 🚢</h2>
+                    <span id="modalShipmentCount" class="text-xs bg-blue-100 text-blue-800 px-3 py-1 rounded-full font-bold">0 عمليات</span>
+                </div>
+
+                <div class="flex items-center gap-2">
+                    <button onclick="exportToExcel()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-3 py-2 rounded-lg transition-colors flex items-center gap-1">
+                        📊 تصدير Excel
+                    </button>
+                    <button onclick="closeTasksModal()" class="text-slate-400 hover:text-slate-600 p-2 text-xl font-bold">&times;</button>
+                </div>
+            </div>
+
+            <div class="bg-slate-100 p-3 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3 text-sm">
+                <div class="relative flex-1 min-w-[200px]">
+                    <input type="text" id="searchInput" onkeyup="filterTable()" 
+                        placeholder="🔍 ابحث برقم العملية، المصدر، الفاتورة، أو رقم الحجز..." 
+                        class="w-full pl-3 pr-3 py-1.5 border border-slate-300 rounded-lg text-xs bg-white focus:ring-2 focus:ring-blue-500 outline-none">
+                </div>
+
+                <div class="flex items-center gap-2">
+                    <input type="checkbox" id="selectAll" onchange="toggleSelectAll(this)" class="w-4 h-4 rounded border-slate-300">
+                    <label for="selectAll" class="font-semibold text-slate-700 text-xs">تحديد الكل</label>
+                    <span id="selectedCount" class="text-xs text-slate-500 mr-1">(0)</span>
+                </div>
+
+                <div class="flex items-center gap-2">
+                    <select id="bulkTaskSelect" class="p-1.5 border border-slate-300 rounded text-xs bg-white">
+                        <option value="">-- تغيير المهمة --</option>
+                        <option value="inspection_by_us">🔍 إجراء الفحص عن طريقنا</option>
+                        <option value="documentation">📄 البدء في إصدار مستندات الصادر</option>
+                        <option value="export_booking_transport">🚚 متابعة سحب الفارغ وشحن البضاعة</option>
+                        <option value="shipment_amendment">✏️ إجراء تعديلات على بيان الصادر</option>
+                        <option value="task_completion">✅ إتمام الجمرك والإفراج النهائي</option>
+                        <option value="file_archiving">📁 تقفيل وتصفية ملف الصادر</option>
+                    </select>
+                    <button onclick="applyBulkTaskUpdate()" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-3 py-1.5 rounded transition-colors">تحديث</button>
+                    <button onclick="applyBulkDelete()" class="bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold px-3 py-1.5 rounded transition-colors">🗑️ مسح</button>
+                </div>
+            </div>
+
+            <div class="overflow-y-auto flex-1 p-4">
+                <table class="w-full text-right text-sm">
+                    <thead class="bg-slate-50 text-slate-500 font-semibold border-b border-slate-200 sticky top-0">
+                        <tr>
+                            <th class="p-3 w-10">#</th>
+                            <th class="p-3">رقم العملية (خ/د)</th>
+                            <th class="p-3">الخط الملاحي والحاوية</th>
+                            <th class="p-3">المصدر / المصنع</th>
+                            <th class="p-3">الفاتورة / إذن الشحن</th>
+                            <th class="p-3">موعد الإغلاق (Cut-Off / VGM)</th>
+                            <th class="p-3">تاريخ المغادرة والوصول (ETD / ETA)</th>
+                            <th class="p-3 text-center">التتبع المباشر الصامت</th>
+                            <th class="p-3">نوع المهمة</th>
+                            <th class="p-3 text-center">الإجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody id="modalTableBody" class="divide-y divide-slate-100 font-medium">
+                    </tbody>
+                </table>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://yoxggtyqsjrwcjpjbiuo.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_OPgRgcwJYDR3Zd5UReo5dw_MmTjlnlg';
+
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        let allShipmentsData = [];
+
+        function showToast(msg, icon = "✅") {
+            const toast = document.getElementById('toastNotification');
+            document.getElementById('toastMessage').innerText = msg;
+            document.getElementById('toastIcon').innerText = icon;
+
+            toast.classList.remove('hidden');
+            setTimeout(() => {
+                toast.classList.add('hidden');
+            }, 3500);
+        }
+
+        function initRealtimeSync() {
+            supabaseClient
+                .channel('public:shipments')
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'shipments' }, payload => {
+                    showToast("⚡ تم التحديث التلقائي بنجاح!", "🔄");
+                    fetchShipmentsToModal();
+                })
+                .subscribe();
+        }
+
+        function parseShipmentTitle(titleRaw) {
+            const parts = titleRaw.split(' - ').map(p => p.trim());
+            let containerCount = "1";
+            let containerType = parts[2] || "N/A";
+            
+            if (containerType.includes(' x ')) {
+                const cParts = containerType.split(' x ');
+                containerCount = cParts[0].trim();
+                containerType = cParts[1].trim();
+            }
+
+            let invoiceNo = "N/A";
+            const rawInvoice = parts[6] || "";
+            if (rawInvoice.startsWith("INV")) {
+                invoiceNo = rawInvoice.replace("INV", "").trim();
+            } else {
+                invoiceNo = rawInvoice;
+            }
+
+            return {
+                external_file_no: parts[0] || "N/A",
+                internal_file_no: parts[1] || "N/A",
+                container_type: `${containerCount}x ${containerType}`,
+                is_reefer: containerType.toUpperCase().includes("RF"),
+                destination_port: parts[3] || "N/A",
+                loading_port: parts[4] || "N/A",
+                origin_country: parts[5] || "N/A",
+                invoice_no: invoiceNo,
+                client_name: parts[7] || "N/A",
+                bl_shipping_no: parts[8] || "N/A"
+            };
+        }
+
+        function autoDetectCarrierPriority(fullTitleRaw, bookingNo) {
+            const str = fullTitleRaw.toUpperCase();
+            const bk = bookingNo.toUpperCase().trim();
+
+            if (str.includes('HAPAG') || bk.startsWith('HLC') || /^\d{8}$/.test(bk)) return 'Hapag-Lloyd';
+            if (str.includes('MAERSK') || str.includes('SEALAND') || /^\d{9}$/.test(bk) || /^\d{10}$/.test(bk) || bk.startsWith('MAEU')) return 'Maersk';
+            if (str.includes('MSC') || bk.startsWith('EBKG') || bk.startsWith('MED') || bk.startsWith('MSCU')) return 'MSC';
+            if (str.includes('CMA') || bk.startsWith('CMA') || bk.startsWith('CMDU')) return 'CMA CGM';
+            if (str.includes('COSCO') || bk.startsWith('COSU') || bk.startsWith('6')) return 'COSCO';
+            if (str.includes('ARKAS') || bk.startsWith('ARK')) return 'Arkas';
+            if (str.includes('TARROS') || bk.startsWith('TRS')) return 'Tarros';
+
+            return 'Hapag-Lloyd';
+        }
+
+        function onTitleInputChanged() {
+            const val = document.getElementById('rawTitle').value;
+            const previewCard = document.getElementById('previewCard');
+
+            if (!val.trim()) {
+                previewCard.classList.add('hidden');
+                return;
+            }
+
+            const parsed = parseShipmentTitle(val);
+            document.getElementById('pvExt').innerText = parsed.external_file_no;
+            document.getElementById('pvInt').innerText = parsed.internal_file_no;
+            document.getElementById('pvContainer').innerText = parsed.container_type;
+            document.getElementById('pvBooking').innerText = parsed.bl_shipping_no;
+
+            const detected = autoDetectCarrierPriority(val, parsed.bl_shipping_no);
+            document.getElementById('carrierSelect').value = detected;
+
+            previewCard.classList.remove('hidden');
+        }
+
+        // دالة استدعاء الإضافة المباشرة بالسحب الصامت
+        async function fetchDatesSilently(shipmentId, bookingNo) {
+            if (!bookingNo || bookingNo === 'N/A') return showToast("رقم الحجز غير صالح", "⚠️");
+
+            showToast(`⏳ جاري جلب تواريخ الحجز (${bookingNo}) عبر الإضافة...`, "🔄");
+
+            // تم وضع الـ Extension ID الخاص بك هنا بشكل ثابت ومباشر
+            const EXTENSION_ID = "ckjkngbollcbhaacelldonopehlgpgaa"; 
+
+            if (typeof chrome !== "undefined" && chrome.runtime && chrome.runtime.sendMessage) {
+                try {
+                    chrome.runtime.sendMessage(EXTENSION_ID, {
+                        action: "FETCH_HAPAG_SILENTLY",
+                        bookingNo: bookingNo,
+                        shipmentId: shipmentId
+                    }, (response) => {
+                        if (chrome.runtime.lastError) {
+                            showToast("⚠️ يتعذر التواصل مع الإضافة، تأكد من تحميل المجلد في chrome://extensions", "❌");
+                            console.error(chrome.runtime.lastError);
+                            return;
+                        }
+                        if (response && response.success) {
+                            showToast(`🚀 تم تحديث مواعيد الشحنة (${bookingNo}) بنجاح!`, "✅");
+                            fetchShipmentsToModal();
+                        } else {
+                            showToast("❌ تعذر الجلب: " + (response ? response.message : "لم يتم العثور على مواعيد بالصفحة"), "❌");
+                        }
+                    });
+                } catch (err) {
+                    showToast("⚠️ خطأ في الاتصال بالإضافة: " + err.message, "❌");
+                }
+            } else {
+                showToast("⚠️ يرجى استخدام متصفح Chrome لضمان الربط بالإضافة", "⚠️");
+            }
+        }
+
+        function openTasksModal() {
+            document.getElementById('tasksModal').classList.remove('hidden');
+            fetchShipmentsToModal();
+        }
+
+        function closeTasksModal() {
+            document.getElementById('tasksModal').classList.add('hidden');
+        }
+
+        async function fetchShipmentsToModal() {
+            try {
+                const { data, error } = await supabaseClient
+                    .from('shipments')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+
+                if (error) throw error;
+
+                allShipmentsData = data;
+                renderModalTable(allShipmentsData);
+
+                document.getElementById('connectionStatus').className = "inline-flex items-center gap-2 bg-emerald-50 text-emerald-700 text-xs font-semibold px-3 py-1.5 rounded-full border border-emerald-200";
+                document.getElementById('connectionStatus').innerHTML = '<span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span> متصل بـ Supabase (تزامن لحظي)';
+            } catch (err) {
+                console.error("خطأ:", err.message);
+                document.getElementById('connectionStatus').className = "inline-flex items-center gap-2 bg-rose-50 text-rose-700 text-xs font-semibold px-3 py-1.5 rounded-full border border-rose-200";
+                document.getElementById('connectionStatus').innerHTML = '⚠️ خطأ بالاتصال';
+            }
+        }
+
+        function renderModalTable(data) {
+            const tbody = document.getElementById('modalTableBody');
+            tbody.innerHTML = data.map(item => {
+                const carrier = item.carrier_name || 'Hapag-Lloyd';
+
+                return `
+                    <tr class="hover:bg-slate-50 transition-colors">
+                        <td class="p-3">
+                            <input type="checkbox" value="${item.id}" class="row-checkbox w-4 h-4 rounded border-slate-300" onchange="updateSelectedCount()">
+                        </td>
+                        <td class="p-3 font-mono font-bold text-blue-600">
+                            ${item.external_file_no}
+                            <div class="text-xs font-normal text-slate-400">${item.internal_file_no}</div>
+                        </td>
+                        <td class="p-3 text-xs">
+                            <select onchange="updateShipmentCarrier('${item.id}', this.value)" class="font-bold text-blue-900 border border-slate-200 rounded p-1 mb-1 bg-white">
+                                <option value="Hapag-Lloyd" ${carrier === 'Hapag-Lloyd' ? 'selected' : ''}>Hapag-Lloyd</option>
+                                <option value="Maersk" ${carrier === 'Maersk' ? 'selected' : ''}>Maersk</option>
+                                <option value="MSC" ${carrier === 'MSC' ? 'selected' : ''}>MSC</option>
+                                <option value="CMA CGM" ${carrier === 'CMA CGM' ? 'selected' : ''}>CMA CGM</option>
+                                <option value="COSCO" ${carrier === 'COSCO' ? 'selected' : ''}>COSCO</option>
+                                <option value="Arkas" ${carrier === 'Arkas' ? 'selected' : ''}>Arkas</option>
+                                <option value="Tarros" ${carrier === 'Tarros' ? 'selected' : ''}>Tarros</option>
+                                <option value="Other" ${carrier === 'Other' ? 'selected' : ''}>آخر</option>
+                            </select>
+                            <div>${item.is_reefer ? '<span class="bg-amber-100 text-amber-800 font-bold px-1 rounded">🧊 ثلاجة</span> ' : ''}${item.container_type}</div>
+                        </td>
+                        <td class="p-3 text-xs font-bold text-slate-700">${item.client_name}</td>
+                        <td class="p-3 text-xs font-mono">
+                            <div class="text-blue-900 font-bold">INV: ${item.invoice_no}</div>
+                            <div class="text-emerald-700 font-bold">Booking: ${item.bl_shipping_no}</div>
+                        </td>
+                        <td class="p-3 text-xs space-y-1">
+                            <div>
+                                <span class="text-[10px] text-slate-400 font-bold block">Cut-Off:</span>
+                                <input type="date" value="${item.cutoff_date ? item.cutoff_date.split('T')[0] : ''}" 
+                                    onchange="updateShipmentDate('${item.id}', 'cutoff_date', this.value)"
+                                    class="p-1 border border-slate-300 rounded text-xs bg-white font-bold text-slate-800">
+                            </div>
+                            <div>
+                                <span class="text-[10px] text-amber-600 font-bold block">VGM Cut-off:</span>
+                                <input type="date" value="${item.vgm_date ? item.vgm_date.split('T')[0] : ''}" 
+                                    onchange="updateShipmentDate('${item.id}', 'vgm_date', this.value)"
+                                    class="p-1 border border-amber-200 rounded text-xs bg-amber-50 font-bold text-amber-900">
+                            </div>
+                        </td>
+                        <td class="p-3 text-xs space-y-1">
+                            <div>
+                                <span class="text-[10px] text-indigo-500 font-bold block">ETD المغادرة:</span>
+                                <input type="date" value="${item.etd_date ? item.etd_date.split('T')[0] : ''}" 
+                                    onchange="updateShipmentDate('${item.id}', 'etd_date', this.value)"
+                                    class="p-1 border border-slate-300 rounded text-xs bg-white font-bold text-indigo-900">
+                            </div>
+                            <div>
+                                <span class="text-[10px] text-emerald-600 font-bold block">ETA الوصول:</span>
+                                <input type="date" value="${item.eta_date ? item.eta_date.split('T')[0] : ''}" 
+                                    onchange="updateShipmentDate('${item.id}', 'eta_date', this.value)"
+                                    class="p-1 border border-emerald-200 rounded text-xs bg-emerald-50 font-bold text-emerald-900">
+                            </div>
+                        </td>
+                        <td class="p-3 text-center">
+                            ${item.bl_shipping_no !== 'N/A' ? `
+                                <button onclick="fetchDatesSilently('${item.id}', '${item.bl_shipping_no}')" 
+                                    class="w-full bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold px-3 py-2 rounded-lg shadow-sm transition-all flex items-center justify-center gap-1">
+                                    ⚡ 1. جلب المواعيد تلقائياً
+                                </button>
+                            ` : '<span class="text-slate-400 text-xs">-</span>'}
+                        </td>
+                        <td class="p-3">
+                            <select onchange="updateSingleTask('${item.id}', this.value)" class="p-1 border border-slate-200 rounded text-xs bg-white font-semibold">
+                                <option value="inspection_by_us" ${item.current_main_task === 'inspection_by_us' ? 'selected' : ''}>🔍 إجراء الفحص المعاينة عن طريقنا</option>
+                                <option value="documentation" ${item.current_main_task === 'documentation' ? 'selected' : ''}>📄 البدء في إصدار مستندات الصادر</option>
+                                <option value="export_booking_transport" ${item.current_main_task === 'export_booking_transport' ? 'selected' : ''}>🚚 متابعة سحب الفارغ وشحن البضاعة</option>
+                                <option value="shipment_amendment" ${item.current_main_task === 'shipment_amendment' ? 'selected' : ''}>✏️ إجراء تعديلات على بيان الصادر</option>
+                                <option value="task_completion" ${item.current_main_task === 'task_completion' ? 'selected' : ''}>✅ إتمام الجمرك والإفراج النهائي</option>
+                                <option value="file_archiving" ${item.current_main_task === 'file_archiving' ? 'selected' : ''}>📁 تقفيل وتصفية ملف الصادر</option>
+                            </select>
+                        </td>
+                        <td class="p-3 text-center">
+                            <button onclick="deleteSingleShipment('${item.id}')" class="text-rose-600 hover:text-rose-800 text-xs font-bold px-2 py-1 bg-rose-50 rounded border border-rose-100">مسح</button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+
+            document.getElementById('modalShipmentCount').innerText = `${data.length} عمليات صادر`;
+            document.getElementById('selectAll').checked = false;
+            updateSelectedCount();
+        }
+
+        async function updateShipmentCarrier(id, carrierValue) {
+            try {
+                const { error } = await supabaseClient.from('shipments').update({ carrier_name: carrierValue }).eq('id', id);
+                if (error) throw error;
+            } catch (err) {
+                showToast("فشل تحديث الخط الملاحي", "❌");
+            }
+        }
+
+        async function updateShipmentDate(id, fieldName, value) {
+            try {
+                const updateObj = {};
+                updateObj[fieldName] = value;
+                const { error } = await supabaseClient.from('shipments').update(updateObj).eq('id', id);
+                if (error) throw error;
+            } catch (err) {
+                showToast("فشل حفظ التاريخ", "❌");
+            }
+        }
+
+        document.getElementById('shipmentForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('submitBtn');
+            btn.innerText = "جاري الحفظ...";
+            btn.disabled = true;
+
+            const rawTitle = document.getElementById('rawTitle').value;
+            const mainTask = document.getElementById('mainTask').value;
+            const carrierName = document.getElementById('carrierSelect').value;
+
+            const parsed = parseShipmentTitle(rawTitle);
+
+            try {
+                const { error } = await supabaseClient
+                    .from('shipments')
+                    .insert([{
+                        full_title_raw: rawTitle,
+                        carrier_name: carrierName,
+                        current_main_task: mainTask,
+                        cutoff_date: null,
+                        etd_date: null,
+                        ...parsed
+                    }]);
+
+                if (error) throw error;
+
+                document.getElementById('rawTitle').value = '';
+                document.getElementById('previewCard').classList.add('hidden');
+                showToast("تم حفظ عملية الصادر بنجاح", "✅");
+
+            } catch (err) {
+                showToast("فشل الحفظ: " + err.message, "❌");
+            } finally {
+                btn.innerText = "+ حفظ عملية الصادر في النظام";
+                btn.disabled = false;
+            }
+        });
+
+        function toggleSelectAll(master) {
+            document.querySelectorAll('.row-checkbox').forEach(cb => cb.checked = master.checked);
+            updateSelectedCount();
+        }
+
+        function updateSelectedCount() {
+            const count = document.querySelectorAll('.row-checkbox:checked').length;
+            document.getElementById('selectedCount').innerText = `(${count})`;
+        }
+
+        async function updateSingleTask(id, newTask) {
+            try {
+                const { error } = await supabaseClient.from('shipments').update({ current_main_task: newTask }).eq('id', id);
+                if (error) throw error;
+            } catch (err) {
+                showToast("فشل تحديث المهمة", "❌");
+            }
+        }
+
+        async function deleteSingleShipment(id) {
+            if (!confirm("هل أنت تأكد من مسح هذه الشحنة نهائياً؟")) return;
+            try {
+                const { error } = await supabaseClient.from('shipments').delete().eq('id', id);
+                if (error) throw error;
+            } catch (err) {
+                showToast("فشل المسح", "❌");
+            }
+        }
+
+        async function exportToExcel() {
+            if (!allShipmentsData.length) return showToast("لا توجد بيانات للتصدير", "⚠️");
+
+            const excelData = allShipmentsData.map(item => {
+                return {
+                    "رقم العملية الخارجي": item.external_file_no,
+                    "رقم العملية الداخلي": item.internal_file_no,
+                    "الخط الملاحي": item.carrier_name || 'Hapag-Lloyd',
+                    "عدد ونوع الحاوية": item.container_type,
+                    "ثلاجة صادر؟": item.is_reefer ? "نعم" : "لا",
+                    "ميناء الشحن (مصر)": item.destination_port,
+                    "تاريخ الـ Cut-off": item.cutoff_date ? item.cutoff_date.split('T')[0] : '',
+                    "تاريخ الـ VGM": item.vgm_date ? item.vgm_date.split('T')[0] : '',
+                    "تاريخ المغادرة ETD": item.etd_date ? item.etd_date.split('T')[0] : '',
+                    "تاريخ الوصول ETA": item.eta_date ? item.eta_date.split('T')[0] : '',
+                    "رقم الفاتورة": item.invoice_no,
+                    "اسم المصدر / المصنع": item.client_name,
+                    "رقم حجز الشحن Booking": item.bl_shipping_no
+                };
+            });
+
+            const worksheet = XLSX.utils.json_to_sheet(excelData);
+            worksheet['!views'] = [{ RTL: true }];
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "تقرير صادر ومواعيد المغادرة والوصول");
+            XLSX.writeFile(workbook, `تقرير_صادر_مواعيد_المغادرة_${new Date().toISOString().split('T')[0]}.xlsx`);
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            initRealtimeSync();
+        });
+    </script>
+</body>
+</html>
