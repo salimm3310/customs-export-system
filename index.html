@@ -266,39 +266,34 @@
             previewCard.classList.remove('hidden');
         }
 
-        // دالة استدعاء الإضافة المباشرة بالسحب الصامت
+        // دالة السحب الصامت عبر الإضافة
         async function fetchDatesSilently(shipmentId, bookingNo) {
             if (!bookingNo || bookingNo === 'N/A') return showToast("رقم الحجز غير صالح", "⚠️");
 
             showToast(`⏳ جاري جلب تواريخ الحجز (${bookingNo}) عبر الإضافة...`, "🔄");
 
-            // تم وضع الـ Extension ID الخاص بك هنا بشكل ثابت ومباشر
             const EXTENSION_ID = "ckjkngbollcbhaacelldonopehlgpgaa"; 
 
-            if (typeof chrome !== "undefined" && chrome.runtime && chrome.runtime.sendMessage) {
-                try {
-                    chrome.runtime.sendMessage(EXTENSION_ID, {
-                        action: "FETCH_HAPAG_SILENTLY",
-                        bookingNo: bookingNo,
-                        shipmentId: shipmentId
-                    }, (response) => {
-                        if (chrome.runtime.lastError) {
-                            showToast("⚠️ يتعذر التواصل مع الإضافة، تأكد من تحميل المجلد في chrome://extensions", "❌");
-                            console.error(chrome.runtime.lastError);
-                            return;
-                        }
-                        if (response && response.success) {
-                            showToast(`🚀 تم تحديث مواعيد الشحنة (${bookingNo}) بنجاح!`, "✅");
-                            fetchShipmentsToModal();
-                        } else {
-                            showToast("❌ تعذر الجلب: " + (response ? response.message : "لم يتم العثور على مواعيد بالصفحة"), "❌");
-                        }
-                    });
-                } catch (err) {
-                    showToast("⚠️ خطأ في الاتصال بالإضافة: " + err.message, "❌");
-                }
+            if (window.chrome && chrome.runtime && chrome.runtime.sendMessage) {
+                chrome.runtime.sendMessage(EXTENSION_ID, {
+                    action: "FETCH_HAPAG_SILENTLY",
+                    bookingNo: bookingNo,
+                    shipmentId: shipmentId
+                }, (response) => {
+                    if (chrome.runtime.lastError) {
+                        showToast("⚠️ لم يتم العثور على الإضافة، يرجى التأكد من الضغط على 🔄 في chrome://extensions", "❌");
+                        console.error(chrome.runtime.lastError);
+                        return;
+                    }
+                    if (response && response.success) {
+                        showToast(`🚀 تم تحديث مواعيد الشحنة (${bookingNo}) بنجاح!`, "✅");
+                        fetchShipmentsToModal();
+                    } else {
+                        showToast("❌ تعذر الجلب: " + (response ? response.message : "خطأ غير معروف"), "❌");
+                    }
+                });
             } else {
-                showToast("⚠️ يرجى استخدام متصفح Chrome لضمان الربط بالإضافة", "⚠️");
+                showToast("⚠️ يرجى استخدام متصفح Google Chrome لضمان الربط بالإاضافة", "⚠️");
             }
         }
 
