@@ -184,14 +184,14 @@
             toast.classList.remove('hidden');
             setTimeout(() => {
                 toast.classList.add('hidden');
-            }, 3500);
+            }, 4000);
         }
 
         function initRealtimeSync() {
             supabaseClient
                 .channel('public:shipments')
                 .on('postgres_changes', { event: '*', schema: 'public', table: 'shipments' }, payload => {
-                    showToast("⚡ تم التحديث بنجاح!", "🔄");
+                    showToast("⚡ تم التحديث التلقائي بنجاح!", "🔄");
                     fetchShipmentsToModal();
                 })
                 .subscribe();
@@ -266,11 +266,11 @@
             previewCard.classList.remove('hidden');
         }
 
-        // دالة السحب الصارم والدقيق
+        // دالة السحب الصارم والتنبيـه الدقيق
         async function fetchDatesSilently(shipmentId, bookingNo) {
             if (!bookingNo || bookingNo === 'N/A') return showToast("رقم الحجز غير صالح", "⚠️");
 
-            showToast(`⏳ جاري فحص تفاصيل الشحنة (${bookingNo}) بحرص...`, "🔄");
+            showToast(`⏳ جاري جلب تواريخ الحجز (${bookingNo}) عبر الإضافة...`, "🔄");
 
             const EXTENSION_ID = "ckjkngbollcbhaacelldonopehlgpgaa"; 
 
@@ -281,29 +281,31 @@
                     shipmentId: shipmentId
                 }, (response) => {
                     if (chrome.runtime.lastError) {
-                        showToast("⚠️ يتعذر التواصل مع الإضافة، اضغط 🔄 في chrome://extensions", "❌");
+                        showToast("⚠️ لم يتم العثور على الإضافة، اضغط 🔄 في chrome://extensions", "❌");
+                        console.error(chrome.runtime.lastError);
                         return;
                     }
                     if (response && response.success) {
-                        const s = response.summary || {};
-                        let foundList = [];
-                        if (s.etd) foundList.push("ETD");
-                        if (s.eta) foundList.push("ETA");
-                        if (s.cutoff) foundList.push("Cut-off");
-                        if (s.vgm) foundList.push("VGM");
+                        if (response.hasDates) {
+                            const s = response.summary || {};
+                            let foundList = [];
+                            if (s.etd) foundList.push("ETD");
+                            if (s.eta) foundList.push("ETA");
+                            if (s.cutoff) foundList.push("Cut-off");
+                            if (s.vgm) foundList.push("VGM");
 
-                        if (foundList.length > 0) {
-                            showToast(`🚀 تم جلب: [ ${foundList.join(' , ')} ] وترك الباقي فارغاً لعدم التضليل`, "✅");
+                            showToast(`🚀 تم تحديث: [ ${foundList.join(' , ')} ] بنجاح!`, "✅");
+                            fetchShipmentsToModal();
                         } else {
-                            showToast(`⚠️ لم يتم إظهار تواريخ رسمية للشحنة بالصفحة، تم ترك الحقول فارغة`, "⚠️");
+                            // التنبيه الأصفر الصريح عند عدم وجود تواريخ
+                            showToast(`⚠️ لم يتم العثور على تواريخ رسمية للحجز (${bookingNo})، تم ترك الخانات كما هي`, "⚠️");
                         }
-                        fetchShipmentsToModal();
                     } else {
-                        showToast("❌ تعذر الجلب من المصدر", "❌");
+                        showToast("❌ تعذر الجلب: " + (response ? response.message : "خطأ غير معروف"), "❌");
                     }
                 });
             } else {
-                showToast("⚠️ يرجى استخدام متصفح Google Chrome", "⚠️");
+                showToast("⚠️ يرجى استخدام متصفح Google Chrome لضمان الاتصال بالإاضافة", "⚠️");
             }
         }
 
