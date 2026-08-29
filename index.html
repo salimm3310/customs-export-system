@@ -230,14 +230,16 @@
             };
         }
 
-        // تم إصلاح التعرف الدقيق على COSCO برقم الحجز المحدد (تبدأ بـ 6 وتتكون من 10 أرقام)
+        // التعرف الصارم السريع لـ COSCO
         function autoDetectCarrierPriority(fullTitleRaw, bookingNo) {
             const str = fullTitleRaw.toUpperCase();
             const bk = bookingNo.toUpperCase().trim();
 
+            // فحص كود COSCO: إذا كان يبدأ بـ 6 وتتكون خاناته من 10 أرقام مجردة أو يشتمل على COSCO
             if (str.includes('COSCO') || bk.startsWith('COSU') || /^6\d{9}$/.test(bk)) return 'COSCO';
+            
             if (str.includes('HAPAG') || bk.startsWith('HLC') || /^\d{8}$/.test(bk)) return 'Hapag-Lloyd';
-            if (str.includes('MAERSK') || str.includes('SEALAND') || bk.startsWith('MAEU') || /^\d{9,10}$/.test(bk)) return 'Maersk';
+            if (str.includes('MAERSK') || str.includes('SEALAND') || bk.startsWith('MAEU') || (/^\d{9,10}$/.test(bk) && !bk.startsWith('6'))) return 'Maersk';
             if (str.includes('MSC') || bk.startsWith('EBKG') || bk.startsWith('MED') || bk.startsWith('MSCU')) return 'MSC';
             if (str.includes('CMA') || bk.startsWith('CMA') || bk.startsWith('CMDU')) return 'CMA CGM';
             if (str.includes('ARKAS') || bk.startsWith('ARK')) return 'Arkas';
