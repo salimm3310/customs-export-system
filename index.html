@@ -168,6 +168,9 @@
         </div>
     </div>
 
+    <!-- استدعاء ملف الربط بـ Extension -->
+    <script src="tracker-link.js"></script>
+
     <script>
         const SUPABASE_URL = 'https://yoxggtyqsjrwcjpjbiuo.supabase.co';
         const SUPABASE_ANON_KEY = 'sb_publishable_OPgRgcwJYDR3Zd5UReo5dw_MmTjlnlg';
@@ -235,9 +238,7 @@
             const str = fullTitleRaw.toUpperCase();
             const bk = bookingNo.toUpperCase().trim();
 
-            // فحص كود COSCO: إذا كان يبدأ بـ 6 وتتكون خاناته من 10 أرقام مجردة أو يشتمل على COSCO
             if (str.includes('COSCO') || bk.startsWith('COSU') || /^6\d{9}$/.test(bk)) return 'COSCO';
-            
             if (str.includes('HAPAG') || bk.startsWith('HLC') || /^\d{8}$/.test(bk)) return 'Hapag-Lloyd';
             if (str.includes('MAERSK') || str.includes('SEALAND') || bk.startsWith('MAEU') || (/^\d{9,10}$/.test(bk) && !bk.startsWith('6'))) return 'Maersk';
             if (str.includes('MSC') || bk.startsWith('EBKG') || bk.startsWith('MED') || bk.startsWith('MSCU')) return 'MSC';
@@ -275,7 +276,8 @@
             const carrier = carrierName || "COSCO";
             showToast(`⏳ جاري جلب تواريخ ${carrier} لـ (${bookingNo})...`, "🔄");
 
-            const EXTENSION_ID = "ckjkngbollcbhaacelldonopehlgpgaa"; 
+            // تم تحديث الـ Extension ID الخاص بإضافة Tracker
+            const EXTENSION_ID = "fnbglnnolemmndfjglfjkkapddfeladc"; 
 
             if (window.chrome && chrome.runtime && chrome.runtime.sendMessage) {
                 chrome.runtime.sendMessage(EXTENSION_ID, {
