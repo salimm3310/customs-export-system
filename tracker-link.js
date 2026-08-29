@@ -1,8 +1,3 @@
-// ==========================================
-// 🚀 توجيه جميع الاستدعاءات للدالة الجديدة
-// ==========================================
-
-// تعريف الدالة القديمة لتوجيه الطلب فوراً ومنع الرسالة
 function fetchDatesSilently(shipmentId, bookingNo, carrier) {
   triggerTrackerExtension(shipmentId, bookingNo, carrier);
 }
@@ -16,7 +11,6 @@ function triggerTrackerExtension(shipmentId, bookingNo, carrier) {
   const carrierName = carrier || "COSCO";
   console.log(`⏳ [Tracker Link] جاري طلب تتبع [${carrierName}] للحجز: ${bookingNo}...`);
 
-  // إرسال الطلب للـ Content Script
   window.postMessage({
     type: "FROM_PAGE_TRACKER",
     shipmentId: shipmentId,
@@ -25,17 +19,12 @@ function triggerTrackerExtension(shipmentId, bookingNo, carrier) {
   }, "*");
 }
 
-// الاستماع لرد الإضافة
 window.addEventListener("message", (event) => {
   if (event.data && event.data.type === "FROM_EXTENSION_RESPONSE") {
     const response = event.data.response;
-    console.log("📥 [Tracker Link] النتيجة:", response);
-
     if (response && response.success) {
       if (response.hasDates) {
-        const etdStr = response.summary.etd || 'غير محدد';
-        const etaStr = response.summary.eta || 'غير محدد';
-        alert(`✅ تم تحديث التواريخ بنجاح!\n\n📅 ETD: ${etdStr}\n📅 ETA: ${etaStr}`);
+        alert(`✅ تم تحديث التواريخ بنجاح!\n\n📅 ETD: ${response.summary.etd}\n📅 ETA: ${response.summary.eta}`);
         location.reload();
       } else {
         alert("ℹ️ تنبيه: " + (response.message || "لم يتم تسجيل تواريخ مؤكدة."));
