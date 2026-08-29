@@ -44,7 +44,7 @@
                 <div>
                     <label class="block text-sm font-semibold mb-1">عنوان الملف المعياري للصادر:</label>
                     <input type="text" id="rawTitle" required
-                        placeholder="EX-2026 - 1002 - 1.0 x 40 RFH - DAMT - FOS - France - INV 26037 - EXPORT CO - 9021122930"
+                        placeholder="EX-2026 - 1002 - 1.0 x 40 RFH - DAMT - FOS - France - INV 26037 - EXPORT CO - 6464821250"
                         class="w-full p-3 border border-slate-300 rounded-lg text-left text-sm font-mono focus:ring-2 focus:ring-blue-500 outline-none" dir="ltr"
                         oninput="onTitleInputChanged()">
                 </div>
@@ -63,11 +63,11 @@
                         <div>
                             <label class="block text-xs font-bold mb-1 text-slate-700">الخط الملاحي المحدد تلقائياً:</label>
                             <select id="carrierSelect" class="w-full p-2 border border-slate-300 rounded text-xs bg-white font-bold text-blue-900 outline-none">
+                                <option value="COSCO">COSCO Shipping</option>
                                 <option value="Hapag-Lloyd">Hapag-Lloyd</option>
                                 <option value="Maersk">Maersk Line / Sealand</option>
                                 <option value="MSC">MSC (Mediterranean Shipping Co)</option>
                                 <option value="CMA CGM">CMA CGM</option>
-                                <option value="COSCO">COSCO Shipping</option>
                                 <option value="Arkas">Arkas Line</option>
                                 <option value="Tarros">Tarros Line</option>
                                 <option value="Other">خط ملاحي آخر</option>
@@ -230,19 +230,20 @@
             };
         }
 
+        // تم إصلاح التعرف الدقيق على COSCO برقم الحجز المحدد (تبدأ بـ 6 وتتكون من 10 أرقام)
         function autoDetectCarrierPriority(fullTitleRaw, bookingNo) {
             const str = fullTitleRaw.toUpperCase();
             const bk = bookingNo.toUpperCase().trim();
 
+            if (str.includes('COSCO') || bk.startsWith('COSU') || /^6\d{9}$/.test(bk)) return 'COSCO';
             if (str.includes('HAPAG') || bk.startsWith('HLC') || /^\d{8}$/.test(bk)) return 'Hapag-Lloyd';
-            if (str.includes('MAERSK') || str.includes('SEALAND') || /^\d{9}$/.test(bk) || /^\d{10}$/.test(bk) || bk.startsWith('MAEU')) return 'Maersk';
+            if (str.includes('MAERSK') || str.includes('SEALAND') || bk.startsWith('MAEU') || /^\d{9,10}$/.test(bk)) return 'Maersk';
             if (str.includes('MSC') || bk.startsWith('EBKG') || bk.startsWith('MED') || bk.startsWith('MSCU')) return 'MSC';
             if (str.includes('CMA') || bk.startsWith('CMA') || bk.startsWith('CMDU')) return 'CMA CGM';
-            if (str.includes('COSCO') || bk.startsWith('COSU') || bk.startsWith('6')) return 'COSCO';
             if (str.includes('ARKAS') || bk.startsWith('ARK')) return 'Arkas';
             if (str.includes('TARROS') || bk.startsWith('TRS')) return 'Tarros';
 
-            return 'Hapag-Lloyd';
+            return 'COSCO';
         }
 
         function onTitleInputChanged() {
@@ -269,7 +270,7 @@
         async function fetchDatesSilently(shipmentId, bookingNo, carrierName) {
             if (!bookingNo || bookingNo === 'N/A') return showToast("رقم الحجز غير صالح", "⚠️");
 
-            const carrier = carrierName || "Hapag-Lloyd";
+            const carrier = carrierName || "COSCO";
             showToast(`⏳ جاري جلب تواريخ ${carrier} لـ (${bookingNo})...`, "🔄");
 
             const EXTENSION_ID = "ckjkngbollcbhaacelldonopehlgpgaa"; 
@@ -293,12 +294,11 @@
                             if (s.etd) foundList.push("ETD");
                             if (s.eta) foundList.push("ETA");
                             if (s.cutoff) foundList.push("Cut-off");
-                            if (s.vgm) foundList.push("VGM");
 
                             showToast(`🚀 [${carrier}] تم تحديث: [ ${foundList.join(' , ')} ] بنجاح!`, "✅");
                             fetchShipmentsToModal();
                         } else {
-                            showToast(`⚠️ [${carrier}] لم يتم العثور على تواريخ رسمية للحجز (${bookingNo})، تم ترك الخانات كما هي`, "⚠️");
+                            showToast(`⚠️ [${carrier}] لم يتم العثور على تواريخ رسمية للحجز (${bookingNo})`, "⚠️");
                         }
                     } else {
                         showToast("❌ تعذر الجلب: " + (response ? response.message : "خطأ غير معروف"), "❌");
@@ -342,7 +342,7 @@
         function renderModalTable(data) {
             const tbody = document.getElementById('modalTableBody');
             tbody.innerHTML = data.map(item => {
-                const carrier = item.carrier_name || 'Hapag-Lloyd';
+                const carrier = item.carrier_name || 'COSCO';
 
                 return `
                     <tr class="hover:bg-slate-50 transition-colors">
@@ -355,11 +355,11 @@
                         </td>
                         <td class="p-3 text-xs">
                             <select onchange="updateShipmentCarrier('${item.id}', this.value)" class="font-bold text-blue-900 border border-slate-200 rounded p-1 mb-1 bg-white">
+                                <option value="COSCO" ${carrier === 'COSCO' ? 'selected' : ''}>COSCO</option>
                                 <option value="Hapag-Lloyd" ${carrier === 'Hapag-Lloyd' ? 'selected' : ''}>Hapag-Lloyd</option>
                                 <option value="Maersk" ${carrier === 'Maersk' ? 'selected' : ''}>Maersk</option>
                                 <option value="MSC" ${carrier === 'MSC' ? 'selected' : ''}>MSC</option>
                                 <option value="CMA CGM" ${carrier === 'CMA CGM' ? 'selected' : ''}>CMA CGM</option>
-                                <option value="COSCO" ${carrier === 'COSCO' ? 'selected' : ''}>COSCO</option>
                                 <option value="Arkas" ${carrier === 'Arkas' ? 'selected' : ''}>Arkas</option>
                                 <option value="Tarros" ${carrier === 'Tarros' ? 'selected' : ''}>Tarros</option>
                                 <option value="Other" ${carrier === 'Other' ? 'selected' : ''}>آخر</option>
@@ -487,8 +487,6 @@
             }
         });
 
-        // ==================== أزرار التحديد الجماعي المسح والتحديث ====================
-
         function toggleSelectAll(master) {
             document.querySelectorAll('.row-checkbox').forEach(cb => cb.checked = master.checked);
             updateSelectedCount();
@@ -499,7 +497,6 @@
             document.getElementById('selectedCount').innerText = `(${count})`;
         }
 
-        // 1. التحديث الجماعي لنوع المهمة
         async function applyBulkTaskUpdate() {
             const selectedBoxes = document.querySelectorAll('.row-checkbox:checked');
             const newTask = document.getElementById('bulkTaskSelect').value;
@@ -529,7 +526,6 @@
             }
         }
 
-        // 2. المسح الجماعي للعمليات المحفوظة
         async function applyBulkDelete() {
             const selectedBoxes = document.querySelectorAll('.row-checkbox:checked');
             if (selectedBoxes.length === 0) {
@@ -593,7 +589,7 @@
                 return {
                     "رقم العملية الخارجي": item.external_file_no,
                     "رقم العملية الداخلي": item.internal_file_no,
-                    "الخط الملاحي": item.carrier_name || 'Hapag-Lloyd',
+                    "الخط الملاحي": item.carrier_name || 'COSCO',
                     "عدد ونوع الحاوية": item.container_type,
                     "ثلاجة صادر؟": item.is_reefer ? "نعم" : "لا",
                     "ميناء الشحن (مصر)": item.destination_port,
