@@ -168,7 +168,7 @@
         </div>
     </div>
 
-    <!-- استدعاء ملف الربط بـ Extension -->
+    <!-- 1. استدعاء ملف الربط بـ Extension Tracker -->
     <script src="tracker-link.js"></script>
 
     <script>
@@ -233,7 +233,6 @@
             };
         }
 
-        // التعرف الصارم السريع لـ COSCO
         function autoDetectCarrierPriority(fullTitleRaw, bookingNo) {
             const str = fullTitleRaw.toUpperCase();
             const bk = bookingNo.toUpperCase().trim();
@@ -268,49 +267,6 @@
             document.getElementById('carrierSelect').value = detected;
 
             previewCard.classList.remove('hidden');
-        }
-
-        async function fetchDatesSilently(shipmentId, bookingNo, carrierName) {
-            if (!bookingNo || bookingNo === 'N/A') return showToast("رقم الحجز غير صالح", "⚠️");
-
-            const carrier = carrierName || "COSCO";
-            showToast(`⏳ جاري جلب تواريخ ${carrier} لـ (${bookingNo})...`, "🔄");
-
-            // تم تحديث الـ Extension ID الخاص بإضافة Tracker
-            const EXTENSION_ID = "fnbglnnolemmndfjglfjkkapddfeladc"; 
-
-            if (window.chrome && chrome.runtime && chrome.runtime.sendMessage) {
-                chrome.runtime.sendMessage(EXTENSION_ID, {
-                    action: "FETCH_SILENTLY",
-                    bookingNo: bookingNo,
-                    shipmentId: shipmentId,
-                    carrier: carrier
-                }, (response) => {
-                    if (chrome.runtime.lastError) {
-                        showToast("⚠️ لم يتم العثور على الإضافة، اضغط 🔄 في chrome://extensions", "❌");
-                        console.error(chrome.runtime.lastError);
-                        return;
-                    }
-                    if (response && response.success) {
-                        if (response.hasDates) {
-                            const s = response.summary || {};
-                            let foundList = [];
-                            if (s.etd) foundList.push("ETD");
-                            if (s.eta) foundList.push("ETA");
-                            if (s.cutoff) foundList.push("Cut-off");
-
-                            showToast(`🚀 [${carrier}] تم تحديث: [ ${foundList.join(' , ')} ] بنجاح!`, "✅");
-                            fetchShipmentsToModal();
-                        } else {
-                            showToast(`⚠️ [${carrier}] لم يتم العثور على تواريخ رسمية للحجز (${bookingNo})`, "⚠️");
-                        }
-                    } else {
-                        showToast("❌ تعذر الجلب: " + (response ? response.message : "خطأ غير معروف"), "❌");
-                    }
-                });
-            } else {
-                showToast("⚠️ يرجى استخدام متصفح Google Chrome لضمان الاتصال بالإاضافة", "⚠️");
-            }
         }
 
         function openTasksModal() {
@@ -405,10 +361,10 @@
                         </td>
                         <td class="p-3 text-center">
                             ${item.bl_shipping_no !== 'N/A' ? `
-                                <button onclick="fetchDatesSilently('${item.id}', '${item.bl_shipping_no}', '${carrier}')" 
-                                    class="w-full bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold px-3 py-2 rounded-lg shadow-sm transition-all flex items-center justify-center gap-1">
-                                    ⚡ 1. جلب المواعيد تلقائياً
-                                </button>
+                                <button onclick="triggerTrackerExtension('${item.id}', '${item.bl_shipping_no}', '${carrier}')" 
+    class="w-full bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold px-3 py-2 rounded-lg shadow-sm transition-all flex items-center justify-center gap-1">
+    ⚡ 1. جلب المواعيد تلقائياً
+</button>
                             ` : '<span class="text-slate-400 text-xs">-</span>'}
                         </td>
                         <td class="p-3">
