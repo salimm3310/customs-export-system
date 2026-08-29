@@ -1,36 +1,37 @@
 // ==========================================
-// 🚢 MSC Scraper Engine - Updated
+// 🚢 MSC Scraper Engine - Service Worker Compatible
 // ==========================================
 
 async function handleMSC(bookingNo) {
   try {
     const trackingUrl = `https://www.msc.com/en/track-a-shipment?number=${bookingNo}`;
-    const response = await fetch(trackingUrl);
-    const htmlText = await response.text();
+    
+    // 1. جلب محتوى HTML الخاص بموقع MSC
+    const response = await fetch(trackingUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+      }
+    });
 
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(htmlText, "text/html");
+    const htmlText = await response.text();
 
     let etd = null;
     let eta = null;
 
-    // 1. البحث في جدولة الأحداث (Events Timeline)
-    const rows = doc.querySelectorAll('tr, div, li');
-    rows.forEach(row => {
-      const text = row.textContent || "";
-      
-      if (text.includes("Estimated Time of Departure") && !etd) {
-        const dateMatch = text.match(/\d{2}\/\d{2}\/\d{4}/);
-        if (dateMatch) etd = dateMatch[0];
-      }
+    // 2. استخراج التواريخ باستخدام Regex المباشر لضمان التوافق مع Service Worker
+    // البحث عن تاريخ المغادرة (Departure)
+    const etdMatch = htmlText.match(/Estimated Time of Departure[\s\S]*?(\d{2}\/\d{2}\/\d{4})/i);
+    if (etdMatch && etdMatch[1]) {
+      etd = etdMatch[1];
+    }
 
-      if ((text.includes("Estimated Time of Arrival") || text.includes("POD ETA")) && !eta) {
-        const dateMatch = text.match(/\d{2}\/\d{2}\/\d{4}/);
-        if (dateMatch) eta = dateMatch[0];
-      }
-    });
+    // البحث عن تاريخ الوصول (Arrival / POD ETA)
+    const etaMatch = htmlText.match(/(?:Estimated Time of Arrival|POD ETA)[\s\S]*?(\d{2}\/\d{2}\/\d{4})/i);
+    if (etaMatch && etaMatch[1]) {
+      eta = etaMatch[1];
+    }
 
-    // 2. التحقق وإرجاع النتيجة
+    // 3. التحقق وإرجاع النتيجة
     if (etd || eta) {
       return {
         success: true,
@@ -43,7 +44,7 @@ async function handleMSC(bookingNo) {
     } else {
       return {
         success: false,
-        message: "لم يتم العثور على التواريخ داخل الهيكل الجديد لصفحة MSC."
+        message: "لم يتم العثور على صيغ التواريخ في استجابة MSC."
       };
     }
   } catch (error) {
