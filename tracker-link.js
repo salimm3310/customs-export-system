@@ -1,11 +1,6 @@
 // ==========================================
-// 🚀 توجيه جميع الاستدعاءات للدالة الجديدة
+// 🚀 Tracker Link - Direct Tracking Integration
 // ==========================================
-
-// تعريف الدالة القديمة لتوجيه الطلب فوراً ومنع الرسالة
-function fetchDatesSilently(shipmentId, bookingNo, carrier) {
-  triggerTrackerExtension(shipmentId, bookingNo, carrier);
-}
 
 function triggerTrackerExtension(shipmentId, bookingNo, carrier) {
   if (!bookingNo || bookingNo === 'N/A') {
@@ -13,35 +8,25 @@ function triggerTrackerExtension(shipmentId, bookingNo, carrier) {
     return;
   }
 
-  const carrierName = carrier || "COSCO";
-  console.log(`⏳ [Tracker Link] جاري طلب تتبع [${carrierName}] للحجز: ${bookingNo}...`);
+  const carrierName = (carrier || "MSC").toUpperCase();
 
-  // إرسال الطلب للـ Content Script
-  window.postMessage({
-    type: "FROM_PAGE_TRACKER",
-    shipmentId: shipmentId,
-    bookingNo: bookingNo,
-    carrier: carrierName
-  }, "*");
+  if (carrierName.includes("MSC")) {
+    const trackingUrl = `https://www.msc.com/en/track-a-shipment?number=${bookingNo}`;
+    
+    // فتح التبويب مباشرة ليتحمل السكريبت حياً أمامك وتتجاوز الحظر
+    const trackingWindow = window.open(trackingUrl, '_blank');
+
+    console.log(`⏳ تم فتح صفحة تتبع MSC للحجز: ${bookingNo}`);
+  } else {
+    alert(`ℹ️ الخط الملاحي [${carrierName}] غير مدعوم حالياً. المدعوم حالياً: MSC.`);
+  }
 }
 
-// الاستماع لرد الإضافة
+// الاستماع للتواريخ المستخرجة فور إرسالها من صفحة MSC
 window.addEventListener("message", (event) => {
-  if (event.data && event.data.type === "FROM_EXTENSION_RESPONSE") {
-    const response = event.data.response;
-    console.log("📥 [Tracker Link] النتيجة:", response);
-
-    if (response && response.success) {
-      if (response.hasDates) {
-        const etdStr = response.summary.etd || 'غير محدد';
-        const etaStr = response.summary.eta || 'غير محدد';
-        alert(`✅ تم تحديث التواريخ بنجاح!\n\n📅 ETD: ${etdStr}\n📅 ETA: ${etaStr}`);
-        location.reload();
-      } else {
-        alert("ℹ️ تنبيه: " + (response.message || "لم يتم تسجيل تواريخ مؤكدة."));
-      }
-    } else {
-      alert("❌ تعذر الجلب: " + (response ? response.message : "حدث خطأ أثناء معالجة البيانات."));
-    }
+  if (event.data && event.data.type === "MSC_DATES_CAPTURED") {
+    const { etd, eta } = event.data.summary;
+    alert(`✅ تم التتبع بنجاح!\n\n📅 ETD (المغادرة): ${etd}\n📅 ETA (الوصول): ${eta}`);
+    location.reload();
   }
 });
