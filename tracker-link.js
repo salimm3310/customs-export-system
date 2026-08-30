@@ -25,7 +25,7 @@ function triggerTrackerExtension(shipmentId, bookingNo, carrier) {
     trackingUrl = `https://www.google.com/search?q=${carrierName}+tracking+${bookingNo}`;
   }
 
-  // فتح صفحة التتبع المباشرة فوراً
+  // فتح صفحة التتبع المباشرة
   window.open(trackingUrl, '_blank');
 }
 
