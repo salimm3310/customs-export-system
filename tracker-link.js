@@ -1,28 +1,34 @@
 // ==========================================
-// 🚀 Tracker Link - Direct MSC Navigation
+// 🚀 Tracker Link - Universal Carrier Support
 // ==========================================
 
 function triggerTrackerExtension(shipmentId, bookingNo, carrier) {
-  if (!bookingNo || bookingNo === 'N/A') {
+  if (!bookingNo || bookingNo === 'N/A' || bookingNo === 'MISSING') {
     alert("⚠️ رقم الحجز (Booking No) غير صالح أو غير موجود.");
     return;
   }
 
-  const carrierName = (carrier || "MSC").toUpperCase();
+  const carrierName = (carrier || "MAERSK").toUpperCase();
+  console.log(`⏳ جاري طلب التتبع للخط [${carrierName}] - رقم الحجز: ${bookingNo}`);
 
-  if (carrierName.includes("MSC")) {
-    // الرابط المباشر لصفحة تتبع الحاويات الشغالة حالياً في MSC
-    const trackingUrl = `https://www.msc.com/en/track-a-shipment?agencyPath=nzl&number=${bookingNo}`;
-    
-    // فتح النافذة في تبويب منفصل
-    window.open(trackingUrl, 'msc_tracker_tab');
-    console.log(`⏳ تم فتح صفحة تتبع MSC للحجز: ${bookingNo}`);
+  let trackingUrl = "";
+
+  if (carrierName.includes("MAERSK")) {
+    trackingUrl = `https://www.maersk.com/tracking/${bookingNo}`;
+  } else if (carrierName.includes("MSC")) {
+    trackingUrl = `https://www.msc.com/en/track-a-shipment?number=${bookingNo}`;
+  } else if (carrierName.includes("COSCO")) {
+    trackingUrl = `https://lines.coscoshipping.com/tracking/${bookingNo}`;
+  } else if (carrierName.includes("CMA")) {
+    trackingUrl = `https://www.cma-cgm.com/ebusiness/tracking/search?SearchTerm=${bookingNo}`;
   } else {
-    alert(`ℹ️ الخط الملاحي [${carrierName}] غير مدعوم حالياً. المدعوم حالياً: MSC.`);
+    trackingUrl = `https://www.google.com/search?q=${carrierName}+tracking+${bookingNo}`;
   }
+
+  // فتح صفحة التتبع المباشرة فوراً
+  window.open(trackingUrl, '_blank');
 }
 
-// الاستماع للنتائج من التبويب المفتوح
 window.addEventListener("message", (event) => {
   if (event.data && event.data.type === "MSC_DATES_CAPTURED") {
     const { etd, eta } = event.data.summary;
