@@ -101,7 +101,6 @@
                             </div>
                         </td>
                         <td>
-                            <!-- زر التتبع المباشر لـ Maersk والمربوط بالإصلاح الجديد -->
                             <button class="btn-track" onclick="executeUniversalTrack('276193631', 'MAERSK')">
                                 ⚡ 1. جلب المواعيد تلقائياً
                             </button>
@@ -120,7 +119,6 @@
         </div>
     </div>
 
-    <!-- دالة التتبع المحدثة بمعرف الإضافة الجديد -->
     <script>
         const EXTENSION_ID = "gkheekkmikemniiekdplaicmojfnfhdo";
 
@@ -131,8 +129,6 @@
             }
 
             const carrierName = (carrier || "MAERSK").toUpperCase().trim();
-            console.log(`⏳ جاري التتبع المباشر للخط [${carrierName}] - رقم الحجز: ${bookingNo}`);
-
             let trackingUrl = "";
 
             if (carrierName.includes("MAERSK")) {
@@ -147,32 +143,14 @@
                 trackingUrl = `https://www.google.com/search?q=${encodeURIComponent(carrierName)}+tracking+${encodeURIComponent(bookingNo)}`;
             }
 
-            // محاولة إرسال رسالة للإضافة بالمعرف الجديد
-            if (typeof chrome !== "undefined" && chrome.runtime && chrome.runtime.sendMessage) {
-                try {
-                    chrome.runtime.sendMessage(EXTENSION_ID, {
-                        action: "open_tracker",
-                        bookingNo: bookingNo,
-                        carrier: carrierName
-                    }, (response) => {
-                        if (chrome.runtime.lastError) {
-                            // في حال عدم الاستجابة فتح التتبع مباشرة بالمتصفح
-                            window.open(trackingUrl, '_blank');
-                        }
-                    });
-                } catch (e) {
-                    window.open(trackingUrl, '_blank');
-                }
-            } else {
-                window.open(trackingUrl, '_blank');
-            }
+            // فتح الرابط مباشرة لمنع الـ Alert القديم الصادر من الإضافة
+            window.open(trackingUrl, '_blank');
         }
 
         function triggerTrackerExtension(shipmentId, bookingNo, carrier) {
             executeUniversalTrack(bookingNo, carrier);
         }
     </script>
-    
     <script src="tracker-link.js"></script>
 </body>
 </html>
