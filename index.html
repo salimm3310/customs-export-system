@@ -11,7 +11,7 @@
         .header-title { font-weight: bold; color: #1e293b; }
         .table-custom { background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
         .badge-carrier { font-size: 0.85rem; padding: 4px 8px; }
-        .btn-track { background-color: #059669; color: white; font-weight: bold; border: none; border-radius: 6px; padding: 8px 12px; transition: all 0.2s; }
+        .btn-track { background-color: #059669; color: white; font-weight: bold; border: none; border-radius: 6px; padding: 8px 12px; transition: all 0.2s; text-decoration: none; display: inline-block; }
         .btn-track:hover { background-color: #047857; color: white; }
         .date-input-group { font-size: 0.8rem; }
     </style>
@@ -72,7 +72,7 @@
                             <small class="text-muted">260862364</small>
                         </td>
                         <td>
-                            <span class="badge bg-secondary badge-carrier" id="carrier-name">Maersk</span><br>
+                            <span class="badge bg-secondary badge-carrier">Maersk</span><br>
                             <small>📦 1.0x 40 ثلاجة RFH</small>
                         </td>
                         <td>
@@ -81,29 +81,29 @@
                         <td>
                             <div class="text-start d-inline-block">
                                 <span class="text-primary fw-bold">INV: 600</span><br>
-                                <span class="text-success fw-bold">Booking: <span id="booking-no">276193631</span></span>
+                                <span class="text-success fw-bold">Booking: 276193631</span>
                             </div>
                         </td>
                         <td>
                             <div class="date-input-group">
                                 <label class="text-muted">Cut-Off:</label>
-                                <input type="date" class="form-control form-control-sm mb-1" id="cutoff-date">
+                                <input type="date" class="form-control form-control-sm mb-1">
                                 <label class="text-warning fw-bold">VGM Cut-off:</label>
-                                <input type="date" class="form-control form-control-sm" id="vgm-date">
+                                <input type="date" class="form-control form-control-sm">
                             </div>
                         </td>
                         <td>
                             <div class="date-input-group">
                                 <label class="text-primary fw-bold">ETD المغادرة:</label>
-                                <input type="date" class="form-control form-control-sm mb-1" id="etd-date" data-type="etd">
+                                <input type="date" class="form-control form-control-sm mb-1" data-type="etd">
                                 <label class="text-success fw-bold">ETA الوصول:</label>
-                                <input type="date" class="form-control form-control-sm" id="eta-date" data-type="eta">
+                                <input type="date" class="form-control form-control-sm" data-type="eta">
                             </div>
                         </td>
                         <td>
-                            <button class="btn-track" onclick="executeUniversalTrack('276193631', 'MAERSK')">
+                            <a href="https://www.maersk.com/tracking/276193631" target="_blank" class="btn-track">
                                 ⚡ 1. جلب المواعيد تلقائياً
-                            </button>
+                            </a>
                         </td>
                         <td>
                             <select class="form-select form-select-sm">
@@ -118,8 +118,5 @@
             </table>
         </div>
     </div>
-
-    <!-- استدعاء ملف التتبع المحدث -->
-    <script src="tracker-link.js"></script>
 </body>
 </html>
