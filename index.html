@@ -101,7 +101,7 @@
                             </div>
                         </td>
                         <td>
-                            <!-- استدعاء الدالة المباشرة ببيانات Maersk الصحيحة -->
+                            <!-- زر التتبع المباشر المُعدّل -->
                             <button class="btn-track" onclick="executeUniversalTrack('276193631', 'MAERSK')">
                                 ⚡ 1. جلب المواعيد تلقائياً
                             </button>
@@ -120,8 +120,8 @@
         </div>
     </div>
 
+    <!-- دالة التتبع المباشر لتجاوز قيود الإضافة القديمة -->
     <script>
-        // دالة التتبع العالمية المباشرة داخل الصفحة
         function executeUniversalTrack(bookingNo, carrier) {
             if (!bookingNo || bookingNo === 'N/A' || bookingNo === 'MISSING') {
                 alert("⚠️ رقم الحجز (Booking No) غير صالح أو غير موجود.");
@@ -143,13 +143,16 @@
                 trackingUrl = `https://www.google.com/search?q=${encodeURIComponent(carrierName)}+tracking+${encodeURIComponent(bookingNo)}`;
             }
 
+            // فتح نافذة التتبع في تبويب جديد مباشرةً
             window.open(trackingUrl, '_blank');
         }
 
-        // توافقية مع أي استدعاء قديم لـ triggerTrackerExtension
         function triggerTrackerExtension(shipmentId, bookingNo, carrier) {
             executeUniversalTrack(bookingNo, carrier);
         }
     </script>
+    
+    <!-- ربط السكريبت الخارجي -->
+    <script src="tracker-link.js"></script>
 </body>
 </html>
