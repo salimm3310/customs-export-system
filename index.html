@@ -11,7 +11,7 @@
         .header-title { font-weight: bold; color: #1e293b; }
         .table-custom { background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
         .badge-carrier { font-size: 0.85rem; padding: 4px 8px; }
-        .btn-track { background-color: #059669; color: white; font-weight: bold; border: none; border-radius: 6px; padding: 8px 12px; transition: all 0.2s; text-decoration: none; display: inline-block; }
+        .btn-track { background-color: #059669; color: white; font-weight: bold; border: none; border-radius: 6px; padding: 8px 12px; transition: all 0.2s; text-decoration: none; display: inline-block; cursor: pointer; }
         .btn-track:hover { background-color: #047857; color: white; }
         .date-input-group { font-size: 0.8rem; }
     </style>
@@ -101,9 +101,9 @@
                             </div>
                         </td>
                         <td>
-                            <a href="https://www.maersk.com/tracking/276193631" target="_blank" class="btn-track">
+                            <button class="btn-track" onclick="executeUniversalTrack('276193631', 'Maersk')">
                                 ⚡ 1. جلب المواعيد تلقائياً
-                            </a>
+                            </button>
                         </td>
                         <td>
                             <select class="form-select form-select-sm">
@@ -118,5 +118,7 @@
             </table>
         </div>
     </div>
+
+    <script src="tracker-link.js"></script>
 </body>
 </html>
