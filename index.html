@@ -101,9 +101,9 @@
                             </div>
                         </td>
                         <td>
-                            <!-- زر التتبع المباشر المُعدّل -->
-                            <button class="btn-track" onclick="window.open('https://www.maersk.com/tracking/276193631', '_blank')">
-                          ⚡ 1. جلب المواعيد تلقائياً
+                            <!-- زر التتبع المباشر لـ Maersk والمربوط بالإصلاح الجديد -->
+                            <button class="btn-track" onclick="executeUniversalTrack('276193631', 'MAERSK')">
+                                ⚡ 1. جلب المواعيد تلقائياً
                             </button>
                         </td>
                         <td>
@@ -120,8 +120,10 @@
         </div>
     </div>
 
-    <!-- دالة التتبع المباشر لتجاوز قيود الإضافة القديمة -->
+    <!-- دالة التتبع المحدثة بمعرف الإضافة الجديد -->
     <script>
+        const EXTENSION_ID = "gkheekkmikemniiekdplaicmojfnfhdo";
+
         function executeUniversalTrack(bookingNo, carrier) {
             if (!bookingNo || bookingNo === 'N/A' || bookingNo === 'MISSING') {
                 alert("⚠️ رقم الحجز (Booking No) غير صالح أو غير موجود.");
@@ -129,6 +131,8 @@
             }
 
             const carrierName = (carrier || "MAERSK").toUpperCase().trim();
+            console.log(`⏳ جاري التتبع المباشر للخط [${carrierName}] - رقم الحجز: ${bookingNo}`);
+
             let trackingUrl = "";
 
             if (carrierName.includes("MAERSK")) {
@@ -143,8 +147,25 @@
                 trackingUrl = `https://www.google.com/search?q=${encodeURIComponent(carrierName)}+tracking+${encodeURIComponent(bookingNo)}`;
             }
 
-            // فتح نافذة التتبع في تبويب جديد مباشرةً
-            window.open(trackingUrl, '_blank');
+            // محاولة إرسال رسالة للإضافة بالمعرف الجديد
+            if (typeof chrome !== "undefined" && chrome.runtime && chrome.runtime.sendMessage) {
+                try {
+                    chrome.runtime.sendMessage(EXTENSION_ID, {
+                        action: "open_tracker",
+                        bookingNo: bookingNo,
+                        carrier: carrierName
+                    }, (response) => {
+                        if (chrome.runtime.lastError) {
+                            // في حال عدم الاستجابة فتح التتبع مباشرة بالمتصفح
+                            window.open(trackingUrl, '_blank');
+                        }
+                    });
+                } catch (e) {
+                    window.open(trackingUrl, '_blank');
+                }
+            } else {
+                window.open(trackingUrl, '_blank');
+            }
         }
 
         function triggerTrackerExtension(shipmentId, bookingNo, carrier) {
@@ -152,7 +173,6 @@
         }
     </script>
     
-    <!-- ربط السكريبت الخارجي -->
     <script src="tracker-link.js"></script>
 </body>
 </html>
