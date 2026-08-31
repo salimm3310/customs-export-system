@@ -11,17 +11,8 @@
         .header-title { font-weight: bold; color: #1e293b; }
         .table-custom { background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
         .badge-carrier { font-size: 0.85rem; padding: 4px 8px; }
-        .btn-direct-link { 
-            display: inline-block;
-            background-color: #059669; 
-            color: #ffffff !important; 
-            font-weight: bold; 
-            text-decoration: none !important;
-            border-radius: 6px; 
-            padding: 8px 12px; 
-            transition: all 0.2s; 
-        }
-        .btn-direct-link:hover { background-color: #047857; }
+        .btn-track { background-color: #059669; color: white; font-weight: bold; border: none; border-radius: 6px; padding: 8px 12px; transition: all 0.2s; }
+        .btn-track:hover { background-color: #047857; color: white; }
         .date-input-group { font-size: 0.8rem; }
     </style>
 </head>
@@ -81,7 +72,7 @@
                             <small class="text-muted">260862364</small>
                         </td>
                         <td>
-                            <span class="badge bg-secondary badge-carrier">Maersk</span><br>
+                            <span class="badge bg-secondary badge-carrier" id="carrier-name">Maersk</span><br>
                             <small>📦 1.0x 40 ثلاجة RFH</small>
                         </td>
                         <td>
@@ -90,34 +81,29 @@
                         <td>
                             <div class="text-start d-inline-block">
                                 <span class="text-primary fw-bold">INV: 600</span><br>
-                                <span class="text-success fw-bold">Booking: 276193631</span>
+                                <span class="text-success fw-bold">Booking: <span id="booking-no">276193631</span></span>
                             </div>
                         </td>
                         <td>
                             <div class="date-input-group">
                                 <label class="text-muted">Cut-Off:</label>
-                                <input type="date" class="form-control form-control-sm mb-1">
+                                <input type="date" class="form-control form-control-sm mb-1" id="cutoff-date">
                                 <label class="text-warning fw-bold">VGM Cut-off:</label>
-                                <input type="date" class="form-control form-control-sm">
+                                <input type="date" class="form-control form-control-sm" id="vgm-date">
                             </div>
                         </td>
                         <td>
                             <div class="date-input-group">
                                 <label class="text-primary fw-bold">ETD المغادرة:</label>
-                                <input type="date" class="form-control form-control-sm mb-1">
+                                <input type="date" class="form-control form-control-sm mb-1" id="etd-date" data-type="etd">
                                 <label class="text-success fw-bold">ETA الوصول:</label>
-                                <input type="date" class="form-control form-control-sm">
+                                <input type="date" class="form-control form-control-sm" id="eta-date" data-type="eta">
                             </div>
                         </td>
                         <td>
-                            <!-- رابط معزول يمنع انتشار الإشارات البرمجية للخلفية -->
-                            <a href="https://www.maersk.com/tracking/276193631" 
-                               target="_blank" 
-                               rel="noopener noreferrer"
-                               onclick="event.stopPropagation();" 
-                               class="btn-direct-link">
-                                ⚡ فتح تتبع Maersk
-                            </a>
+                            <button class="btn-track" onclick="executeUniversalTrack('276193631', 'MAERSK')">
+                                ⚡ 1. جلب المواعيد تلقائياً
+                            </button>
                         </td>
                         <td>
                             <select class="form-select form-select-sm">
@@ -132,5 +118,46 @@
             </table>
         </div>
     </div>
+
+    <script>
+        function executeUniversalTrack(bookingNo, carrier) {
+            if (!bookingNo || bookingNo === 'N/A' || bookingNo === 'MISSING') {
+                alert("⚠️ رقم الحجز (Booking No) غير صالح أو غير موجود.");
+                return;
+            }
+
+            const carrierName = (carrier || "MAERSK").toUpperCase().trim();
+            let trackingUrl = "";
+
+            if (carrierName.includes("MAERSK")) {
+                trackingUrl = `https://www.maersk.com/tracking/${bookingNo}`;
+            } else if (carrierName.includes("MSC")) {
+                trackingUrl = `https://www.msc.com/en/track-a-shipment?number=${bookingNo}`;
+            } else if (carrierName.includes("COSCO")) {
+                trackingUrl = `https://lines.coscoshipping.com/tracking/${bookingNo}`;
+            } else if (carrierName.includes("CMA")) {
+                trackingUrl = `https://www.cma-cgm.com/ebusiness/tracking/search?SearchTerm=${bookingNo}`;
+            } else {
+                trackingUrl = `https://www.google.com/search?q=${encodeURIComponent(carrierName)}+tracking+${encodeURIComponent(bookingNo)}`;
+            }
+
+            window.open(trackingUrl, '_blank');
+        }
+
+        // استقبال البيانات المجلوبة تلقائياً من الإضافة وتحديث حقول الجدول فوراً
+        window.addEventListener("message", (event) => {
+            if (event.data && event.data.type === "MAERSK_DATES_CAPTURED") {
+                const { etd, eta, cutOff } = event.data.summary;
+
+                const etdInput = document.querySelector('input[data-type="etd"]');
+                const etaInput = document.querySelector('input[data-type="eta"]');
+
+                if (etd && etdInput) etdInput.value = etd;
+                if (eta && etaInput) etaInput.value = eta;
+
+                alert(`🎉 تم جلب البيانات وتحديث الجدول تلقائياً!\n\n📅 ETD (المغادرة): ${etd || 'غير محدد'}\n📅 ETA (الوصول): ${eta || 'غير محدد'}`);
+            }
+        });
+    </script>
 </body>
 </html>
