@@ -1,22 +1,20 @@
 // ==========================================
-// 🚢 Maersk & Universal Data Extractor
+// 🚢 Universal Content Script & Extractor
 // ==========================================
 
-// الاستماع لرسائل الصفحة الرئيسية
+// الاستماع لرسائل الواجهة الرئيسية
 window.addEventListener("message", (event) => {
   if (event.data && event.data.type === "START_AUTO_FETCH") {
     const { bookingNo, carrier } = event.data;
-    console.log(`🔍 بدء جلب البيانات تلقائياً للشحنة: ${bookingNo}`);
+    console.log(`🔍 بدء جلب البيانات للشحنة: ${bookingNo} - ${carrier}`);
   }
 });
 
-// دالة فحص وتفريغ بيانات Maersk من الـ DOM
+// استخراج التواريخ المباشر من صفحة Maersk
 function extractMaerskDates() {
   if (!window.location.href.includes("maersk.com/tracking")) return;
 
-  // الانتظار لحين تحميل عناصر التواريخ
   const checkInterval = setInterval(() => {
-    // محددات العناصر الحاوية للتواريخ داخل صفحة Maersk
     const dateElements = document.querySelectorAll('[data-test="estimated-time-arrival"], [data-test="estimated-time-departure"], .dl-event__date, time');
 
     if (dateElements.length > 0) {
@@ -31,7 +29,6 @@ function extractMaerskDates() {
         }
       };
 
-      // تحليل القيم واستخراج التواريخ
       dateElements.forEach(el => {
         const text = el.innerText || el.getAttribute("datetime") || "";
         if (text.includes("ETD") || text.toLowerCase().includes("departure")) {
@@ -41,15 +38,11 @@ function extractMaerskDates() {
         }
       });
 
-      console.log("✅ تم استخراج التواريخ بنجاح:", extractedData.summary);
-
-      // إعادة التواريخ إلى برنامجك الرئيسي
       window.postMessage(extractedData, "*");
     }
   }, 1500);
 }
 
-// دالة مساعدة لتنسيق التواريخ لتقبلها حقول <input type="date">
 function parseDateText(rawText) {
   const match = rawText.match(/\d{4}-\d{2}-\d{2}/) || rawText.match(/\d{1,2}\s+[A-Za-z]+\s+\d{4}/);
   if (match) {
@@ -61,7 +54,6 @@ function parseDateText(rawText) {
   return "";
 }
 
-// تشغيل الفحص فور تحميل الصفحة
 if (document.readyState === "complete" || document.readyState === "interactive") {
   extractMaerskDates();
 } else {
