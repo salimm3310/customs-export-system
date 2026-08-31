@@ -72,7 +72,7 @@
                             <small class="text-muted">260862364</small>
                         </td>
                         <td>
-                            <span class="badge bg-secondary badge-carrier" id="carrier-name">Maersk</span><br>
+                            <span class="badge bg-secondary badge-carrier">Maersk</span><br>
                             <small>📦 1.0x 40 ثلاجة RFH</small>
                         </td>
                         <td>
@@ -81,7 +81,7 @@
                         <td>
                             <div class="text-start d-inline-block">
                                 <span class="text-primary fw-bold">INV: 600</span><br>
-                                <span class="text-success fw-bold">Booking: <span id="booking-no">276193631</span></span>
+                                <span class="text-success fw-bold">Booking: 276193631</span>
                             </div>
                         </td>
                         <td>
@@ -101,10 +101,10 @@
                             </div>
                         </td>
                         <td>
-                            <!-- فتح الرابط مباشرة للتجاوز السريع -->
-                            <button class="btn-track" onclick="openDirectTracking('276193631', 'MAERSK')">
+                            <!-- رابط مباشر صريح يفتح موقع ميرسك بدون أي وسائط أو دالة معترضة -->
+                            <a href="https://www.maersk.com/tracking/276193631" target="_blank" class="btn btn-track text-white text-decoration-none">
                                 ⚡ 1. جلب المواعيد تلقائياً
-                            </button>
+                            </a>
                         </td>
                         <td>
                             <select class="form-select form-select-sm">
@@ -119,27 +119,5 @@
             </table>
         </div>
     </div>
-
-    <script>
-        function openDirectTracking(bookingNo, carrier) {
-            if (!bookingNo) return;
-            const carrierName = (carrier || "MAERSK").toUpperCase();
-            let url = "";
-
-            if (carrierName.includes("MAERSK")) {
-                url = `https://www.maersk.com/tracking/${bookingNo}`;
-            } else if (carrierName.includes("MSC")) {
-                url = `https://www.msc.com/en/track-a-shipment?number=${bookingNo}`;
-            } else if (carrierName.includes("COSCO")) {
-                url = `https://lines.coscoshipping.com/tracking/${bookingNo}`;
-            } else if (carrierName.includes("CMA")) {
-                url = `https://www.cma-cgm.com/ebusiness/tracking/search?SearchTerm=${bookingNo}`;
-            } else {
-                url = `https://www.google.com/search?q=${encodeURIComponent(carrierName)}+tracking+${encodeURIComponent(bookingNo)}`;
-            }
-
-            window.open(url, '_blank');
-        }
-    </script>
 </body>
 </html>
