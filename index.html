@@ -11,8 +11,17 @@
         .header-title { font-weight: bold; color: #1e293b; }
         .table-custom { background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
         .badge-carrier { font-size: 0.85rem; padding: 4px 8px; }
-        .btn-track { background-color: #059669; color: white; font-weight: bold; border: none; border-radius: 6px; padding: 8px 12px; transition: all 0.2s; }
-        .btn-track:hover { background-color: #047857; color: white; }
+        .btn-direct-link { 
+            display: inline-block;
+            background-color: #059669; 
+            color: #ffffff !important; 
+            font-weight: bold; 
+            text-decoration: none !important;
+            border-radius: 6px; 
+            padding: 8px 12px; 
+            transition: all 0.2s; 
+        }
+        .btn-direct-link:hover { background-color: #047857; }
         .date-input-group { font-size: 0.8rem; }
     </style>
 </head>
@@ -101,9 +110,13 @@
                             </div>
                         </td>
                         <td>
-                            <!-- رابط مباشر صريح يفتح موقع ميرسك بدون أي وسائط أو دالة معترضة -->
-                            <a href="https://www.maersk.com/tracking/276193631" target="_blank" class="btn btn-track text-white text-decoration-none">
-                                ⚡ 1. جلب المواعيد تلقائياً
+                            <!-- رابط معزول يمنع انتشار الإشارات البرمجية للخلفية -->
+                            <a href="https://www.maersk.com/tracking/276193631" 
+                               target="_blank" 
+                               rel="noopener noreferrer"
+                               onclick="event.stopPropagation();" 
+                               class="btn-direct-link">
+                                ⚡ فتح تتبع Maersk
                             </a>
                         </td>
                         <td>
