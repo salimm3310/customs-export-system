@@ -2,13 +2,12 @@
 // 🚀 Tracker Link - Universal Carrier Engine
 // ==========================================
 
-function triggerTrackerExtension(shipmentId, bookingNo, carrier) {
+function executeUniversalTrack(bookingNo, carrier) {
   if (!bookingNo || bookingNo === 'N/A' || bookingNo === 'MISSING') {
     alert("⚠️ رقم الحجز (Booking No) غير صالح أو غير موجود.");
     return;
   }
 
-  // قراءة اسم الخط الملاحي وتنظيفه
   const carrierName = (carrier || "MAERSK").toUpperCase().trim();
   console.log(`⏳ جاري طلب التتبع للخط [${carrierName}] - رقم الحجز: ${bookingNo}`);
 
@@ -25,19 +24,22 @@ function triggerTrackerExtension(shipmentId, bookingNo, carrier) {
   } else if (carrierName.includes("EVERGREEN")) {
     trackingUrl = `https://www.shipmentlink.com/servlet/TIDE__L_CargoTracking?nos=${bookingNo}`;
   } else {
-    // أي خط ملاحي آخر غير معرف يفتح نتائج البحث المباشرة
     trackingUrl = `https://www.google.com/search?q=${encodeURIComponent(carrierName)}+tracking+${encodeURIComponent(bookingNo)}`;
   }
 
-  // فتح صفحة التتبع الرسمية للشحنة في تبويب جديد
+  // فتح صفحة التتبع الرسمية مباشرة في تبويب جديد
   window.open(trackingUrl, '_blank');
 }
 
-// استقبال التواريخ إذا تم التقاطها بواسطة الإضافة
+// دالة التوافقية المستدعاة من أزرار الصفحة
+function triggerTrackerExtension(shipmentId, bookingNo, carrier) {
+  executeUniversalTrack(bookingNo, carrier);
+}
+
+// استقبال التواريخ المجلوبة تلقائياً
 window.addEventListener("message", (event) => {
-  if (event.data && event.data.type === "MSC_DATES_CAPTURED") {
+  if (event.data && (event.data.type === "MSC_DATES_CAPTURED" || event.data.type === "MAERSK_DATES_CAPTURED")) {
     const { etd, eta } = event.data.summary;
     alert(`✅ تم جلب التواريخ بنجاح!\n\n📅 ETD (المغادرة): ${etd}\n📅 ETA (الوصول): ${eta}`);
-    location.reload();
   }
 });
