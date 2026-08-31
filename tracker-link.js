@@ -1,6 +1,9 @@
 // ==========================================
-// 🚀 Universal Tracker Engine - Clean & Direct
+// 🚀 Universal Tracker & Bridge Engine
 // ==========================================
+
+// الـ ID الخاص بالإضافة المثبتة في متصفحك
+const EXTENSION_ID = "gkheekkmikemniiekdplaicmojfnfhdo";
 
 function executeUniversalTrack(bookingNo, carrier, shipmentId = null) {
   if (!bookingNo || bookingNo === 'N/A' || bookingNo === 'MISSING') {
@@ -9,11 +12,32 @@ function executeUniversalTrack(bookingNo, carrier, shipmentId = null) {
   }
 
   const carrierName = (carrier || "MAERSK").toUpperCase().trim();
-  console.log(`🚀 جاري فتح التتبع للخط: ${carrierName} - رقم الحجز: ${bookingNo}`);
+  console.log(`⏳ جاري التتبع للخط [${carrierName}] - رقم الحجز: ${bookingNo}`);
 
+  // إرسال الطلب مباشرة للإضافة بواسطة الـ ID الخاص بها
+  if (window.chrome && chrome.runtime && chrome.runtime.sendMessage) {
+    chrome.runtime.sendMessage(EXTENSION_ID, {
+      action: "FETCH_SILENTLY",
+      bookingNo: bookingNo,
+      shipmentId: shipmentId,
+      carrier: carrierName
+    }, (response) => {
+      if (chrome.runtime.lastError) {
+        console.warn("⚠️ تعذر الاتصال بالإضافة مباشرة، جاري فتح الرابط المباشر:", chrome.runtime.lastError.message);
+        openDirectCarrierUrl(bookingNo, carrierName);
+      } else if (response && response.success) {
+        console.log("✅ تم استلام الاستجابة من الإضافة بنجاح", response);
+      }
+    });
+  } else {
+    openDirectCarrierUrl(bookingNo, carrierName);
+  }
+}
+
+function openDirectCarrierUrl(bookingNo, carrierName) {
   let trackingUrl = "";
 
-  if (carrierName.includes("MAERSK") || carrierName.includes("SEALAND")) {
+  if (carrierName.includes("MAERSK")) {
     trackingUrl = `https://www.maersk.com/tracking/${bookingNo}`;
   } else if (carrierName.includes("MSC")) {
     trackingUrl = `https://www.msc.com/en/track-a-shipment?number=${bookingNo}`;
@@ -27,11 +51,9 @@ function executeUniversalTrack(bookingNo, carrier, shipmentId = null) {
     trackingUrl = `https://www.google.com/search?q=${encodeURIComponent(carrierName)}+tracking+${encodeURIComponent(bookingNo)}`;
   }
 
-  // فتح الرابط مباشرة في تبويب جديد دون أي قيود أو تنبيهات
   window.open(trackingUrl, '_blank');
 }
 
-// مستقبل الرسائل الموحد
 window.addEventListener("message", (event) => {
   if (!event.data) return;
   const { type, summary } = event.data;
