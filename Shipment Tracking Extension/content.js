@@ -1,19 +1,19 @@
-console.log("⚡ [Tracker Extension] Content script loaded & listening...");
+// ==========================================
+// 🚢 Universal Content Script - Multi Carrier
+// ==========================================
 
 window.addEventListener("message", (event) => {
   if (event.data && event.data.type === "FROM_PAGE_TRACKER") {
-    const { shipmentId, bookingNo, carrier } = event.data;
+    const { bookingNo, carrier } = event.data;
+    const carrierName = (carrier || "").toUpperCase();
 
+    console.log(`🌐 الإضافة تلقت طلب تتبع للخط [${carrierName}] برقم: ${bookingNo}`);
+
+    // إرسال الأمر للـ background لفتح التتبع لكل الخطوط الملاحية
     chrome.runtime.sendMessage({
-      action: "FETCH_SILENTLY",
-      shipmentId: shipmentId,
+      action: "open_tracker",
       bookingNo: bookingNo,
-      carrier: carrier
-    }, (response) => {
-      window.postMessage({
-        type: "FROM_EXTENSION_RESPONSE",
-        response: response
-      }, "*");
+      carrier: carrierName
     });
   }
 });

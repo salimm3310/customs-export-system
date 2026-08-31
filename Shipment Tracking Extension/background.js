@@ -1,41 +1,26 @@
 // ==========================================
-// 🚀 Background Engine - Event Based Tracking
+// ⚙️ Background Engine - All Carriers
 // ==========================================
 
-let activeTrackingResolver = null;
-
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  // 1. استقبال طلب الجلب من برنامجك
-  if (request.action === "FETCH_SILENTLY") {
-    const url = `https://www.msc.com/en/track-a-shipment?number=${request.bookingNo}`;
+  if (request.action === "open_tracker") {
+    const carrier = (request.carrier || "MAERSK").toUpperCase();
+    const bookingNo = request.bookingNo;
+    let url = "";
 
-    chrome.tabs.create({ url: url, active: false }, (tab) => {
-      const tabId = tab.id;
+    if (carrier.includes("MAERSK")) {
+      url = `https://www.maersk.com/tracking/${bookingNo}`;
+    } else if (carrier.includes("MSC")) {
+      url = `https://www.msc.com/en/track-a-shipment?number=${bookingNo}`;
+    } else if (carrier.includes("COSCO")) {
+      url = `https://lines.coscoshipping.com/tracking/${bookingNo}`;
+    } else if (carrier.includes("CMA")) {
+      url = `https://www.cma-cgm.com/ebusiness/tracking/search?SearchTerm=${bookingNo}`;
+    } else {
+      url = `https://www.google.com/search?q=${encodeURIComponent(carrier)}+tracking+${encodeURIComponent(bookingNo)}`;
+    }
 
-      // ضبط مؤقت طوارئ لمدة 12 ثوانٍ
-      const timeout = setTimeout(() => {
-        chrome.tabs.remove(tabId);
-        sendResponse({ success: false, message: "انتهى وقت الانتظار دون استجابة موقع MSC." });
-      }, 12000);
-
-      // تخزين دالة الرد لاستدعائها فور عثور المحقن على التواريخ
-      activeTrackingResolver = (data) => {
-        clearTimeout(timeout);
-        chrome.tabs.remove(tabId);
-        sendResponse({
-          success: true,
-          hasDates: true,
-          summary: data
-        });
-      };
-    });
-
-    return true; // إبقاء الاتصال مفتوحاً
-  }
-
-  // 2. استقبال التواريخ المستخرجة من صفحة MSC
-  if (request.action === "MSC_DATES_FOUND" && activeTrackingResolver) {
-    activeTrackingResolver(request.summary);
-    activeTrackingResolver = null;
+    // فتح تبويب جديد للتتبع
+    chrome.tabs.create({ url: url, active: true });
   }
 });
