@@ -27,7 +27,7 @@ function executeUniversalTrack(bookingNo, carrier) {
     trackingUrl = `https://www.google.com/search?q=${encodeURIComponent(carrierName)}+tracking+${encodeURIComponent(bookingNo)}`;
   }
 
-  // فتح صفحة التتبع الرسمية مباشرة في تبويب جديد
+  // فتح صفحة التتبع الرسمية مباشرة في تبويب جديد بدون رسائل خطأ
   window.open(trackingUrl, '_blank');
 }
 

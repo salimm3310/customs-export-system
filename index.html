@@ -119,45 +119,7 @@
         </div>
     </div>
 
-    <script>
-        function executeUniversalTrack(bookingNo, carrier) {
-            if (!bookingNo || bookingNo === 'N/A' || bookingNo === 'MISSING') {
-                alert("⚠️ رقم الحجز (Booking No) غير صالح أو غير موجود.");
-                return;
-            }
-
-            const carrierName = (carrier || "MAERSK").toUpperCase().trim();
-            let trackingUrl = "";
-
-            if (carrierName.includes("MAERSK")) {
-                trackingUrl = `https://www.maersk.com/tracking/${bookingNo}`;
-            } else if (carrierName.includes("MSC")) {
-                trackingUrl = `https://www.msc.com/en/track-a-shipment?number=${bookingNo}`;
-            } else if (carrierName.includes("COSCO")) {
-                trackingUrl = `https://lines.coscoshipping.com/tracking/${bookingNo}`;
-            } else if (carrierName.includes("CMA")) {
-                trackingUrl = `https://www.cma-cgm.com/ebusiness/tracking/search?SearchTerm=${bookingNo}`;
-            } else {
-                trackingUrl = `https://www.google.com/search?q=${encodeURIComponent(carrierName)}+tracking+${encodeURIComponent(bookingNo)}`;
-            }
-
-            window.open(trackingUrl, '_blank');
-        }
-
-        // استقبال البيانات المجلوبة تلقائياً من الإضافة وتحديث حقول الجدول فوراً
-        window.addEventListener("message", (event) => {
-            if (event.data && event.data.type === "MAERSK_DATES_CAPTURED") {
-                const { etd, eta, cutOff } = event.data.summary;
-
-                const etdInput = document.querySelector('input[data-type="etd"]');
-                const etaInput = document.querySelector('input[data-type="eta"]');
-
-                if (etd && etdInput) etdInput.value = etd;
-                if (eta && etaInput) etaInput.value = eta;
-
-                alert(`🎉 تم جلب البيانات وتحديث الجدول تلقائياً!\n\n📅 ETD (المغادرة): ${etd || 'غير محدد'}\n📅 ETA (الوصول): ${eta || 'غير محدد'}`);
-            }
-        });
-    </script>
+    <!-- استدعاء ملف التتبع المحدث -->
+    <script src="tracker-link.js"></script>
 </body>
 </html>
