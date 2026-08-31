@@ -1,10 +1,10 @@
 // ==========================================
-// ⚙️ Background Engine - All Carriers
+// 🚀 Universal Carrier Tracker - Background Engine
 // ==========================================
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  if (request.action === "open_tracker") {
-    const carrier = (request.carrier || "MAERSK").toUpperCase();
+  if (request.action === "open_tracker" || request.type === "START_TRACKING") {
+    const carrier = (request.carrier || "MAERSK").toUpperCase().trim();
     const bookingNo = request.bookingNo;
     let url = "";
 
@@ -20,7 +20,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       url = `https://www.google.com/search?q=${encodeURIComponent(carrier)}+tracking+${encodeURIComponent(bookingNo)}`;
     }
 
-    // فتح تبويب جديد للتتبع
     chrome.tabs.create({ url: url, active: true });
+    sendResponse({ status: "SUCCESS", url: url });
   }
+  return true;
 });
