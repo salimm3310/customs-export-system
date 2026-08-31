@@ -101,7 +101,8 @@
                             </div>
                         </td>
                         <td>
-                            <button class="btn-track" onclick="executeUniversalTrack('276193631', 'MAERSK')">
+                            <!-- فتح الرابط مباشرة للتجاوز السريع -->
+                            <button class="btn-track" onclick="openDirectTracking('276193631', 'MAERSK')">
                                 ⚡ 1. جلب المواعيد تلقائياً
                             </button>
                         </td>
@@ -120,37 +121,25 @@
     </div>
 
     <script>
-        const EXTENSION_ID = "gkheekkmikemniiekdplaicmojfnfhdo";
-
-        function executeUniversalTrack(bookingNo, carrier) {
-            if (!bookingNo || bookingNo === 'N/A' || bookingNo === 'MISSING') {
-                alert("⚠️ رقم الحجز (Booking No) غير صالح أو غير موجود.");
-                return;
-            }
-
-            const carrierName = (carrier || "MAERSK").toUpperCase().trim();
-            let trackingUrl = "";
+        function openDirectTracking(bookingNo, carrier) {
+            if (!bookingNo) return;
+            const carrierName = (carrier || "MAERSK").toUpperCase();
+            let url = "";
 
             if (carrierName.includes("MAERSK")) {
-                trackingUrl = `https://www.maersk.com/tracking/${bookingNo}`;
+                url = `https://www.maersk.com/tracking/${bookingNo}`;
             } else if (carrierName.includes("MSC")) {
-                trackingUrl = `https://www.msc.com/en/track-a-shipment?number=${bookingNo}`;
+                url = `https://www.msc.com/en/track-a-shipment?number=${bookingNo}`;
             } else if (carrierName.includes("COSCO")) {
-                trackingUrl = `https://lines.coscoshipping.com/tracking/${bookingNo}`;
+                url = `https://lines.coscoshipping.com/tracking/${bookingNo}`;
             } else if (carrierName.includes("CMA")) {
-                trackingUrl = `https://www.cma-cgm.com/ebusiness/tracking/search?SearchTerm=${bookingNo}`;
+                url = `https://www.cma-cgm.com/ebusiness/tracking/search?SearchTerm=${bookingNo}`;
             } else {
-                trackingUrl = `https://www.google.com/search?q=${encodeURIComponent(carrierName)}+tracking+${encodeURIComponent(bookingNo)}`;
+                url = `https://www.google.com/search?q=${encodeURIComponent(carrierName)}+tracking+${encodeURIComponent(bookingNo)}`;
             }
 
-            // فتح الرابط مباشرة لمنع الـ Alert القديم الصادر من الإضافة
-            window.open(trackingUrl, '_blank');
-        }
-
-        function triggerTrackerExtension(shipmentId, bookingNo, carrier) {
-            executeUniversalTrack(bookingNo, carrier);
+            window.open(url, '_blank');
         }
     </script>
-    <script src="tracker-link.js"></script>
 </body>
 </html>
